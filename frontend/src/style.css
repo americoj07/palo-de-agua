@@ -1,0 +1,143 @@
+/* ===== RESET & BASE ===== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+#app {
+    min-height: calc(100vh - 60px);
+}
+
+/* ===== NAV ===== */
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 60px;
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #e63946;
+    position: sticky;
+    top: 0;
+    z-index: 500;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.img-logo {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.logo span {
+    color: #ffffff;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.logo span span {
+    color: #e63946;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link a {
+    color: #aaaaaa;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-link a:hover {
+    color: #ffffff;
+    background-color: #2a2a2a;
+}
+
+.nav-login {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 7px 16px;
+    border: 1.5px solid #e63946;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-login:hover {
+    background-color: #e63946;
+    color: #ffffff;
+}
+
+/* ===== MÓVIL (≤ 480px) ===== */
+@media (max-width: 480px) {
+    nav {
+        padding: 0 12px;
+        height: 52px;
+        gap: 8px;
+    }
+
+    .logo span {
+        font-size: 15px;
+    }
+
+    .img-logo {
+        font-size: 20px;
+    }
+
+    /* Nav links más compactos */
+    .nav-link {
+        gap: 2px;
+    }
+
+    .nav-link a {
+        font-size: 11px;
+        padding: 5px 7px;
+        border-radius: 6px;
+    }
+
+    .nav-login {
+        font-size: 11px;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    #app {
+        min-height: calc(100vh - 52px);
+    }
+}
+
+/* ===== TABLET (481px - 700px) ===== */
+@media (max-width: 700px) and (min-width: 481px) {
+    nav {
+        padding: 0 16px;
+    }
+
+    .nav-link a {
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+}

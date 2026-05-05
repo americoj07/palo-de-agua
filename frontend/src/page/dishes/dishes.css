@@ -1,0 +1,190 @@
+/* ===== HEADER ===== */
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #e63946;
+}
+
+.menu-header h2 {
+    color: #ffffff;
+    font-size: 24px;
+    margin: 0;
+}
+
+#btn-refresh,
+#btn-refresh-bar {
+    background-color: transparent;
+    border: 2px solid #e63946;
+    color: #e63946;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#btn-refresh:hover,
+#btn-refresh-bar:hover {
+    background-color: #e63946;
+    color: white;
+}
+
+/* ===== BODY ===== */
+.dishes-body {
+    padding: 20px 30px;
+    background-color: #121212;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    align-content: start;
+}
+
+/* ===== CARD DE MESA ===== */
+.table-order-card {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    align-self: start;
+}
+
+.table-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #e63946;
+}
+
+.table-order-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.table-order-time {
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+}
+
+/* ===== SECCIÓN ===== */
+.order-section {
+    padding: 10px 15px;
+    border-bottom: 1px solid #2a2a2a;
+}
+.order-section:last-child { border-bottom: none; }
+
+.order-section-title {
+    color: #aaaaaa;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 8px 0;
+}
+
+/* ===== FILA DE ITEM ===== */
+.order-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #2a2a2a;
+}
+.order-row:last-child { border-bottom: none; }
+
+.order-row-qty {
+    background-color: #e63946;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.order-row-name {
+    color: #ffffff;
+    font-size: 14px;
+    flex: 1;
+}
+
+.order-row-term {
+    background-color: #2a2a2a;
+    color: #e63946;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #e63946;
+}
+
+/* ===== NOTAS ===== */
+.order-notes-section {
+    background: rgba(230,57,70,0.08);
+    border: 1px dashed rgba(230,57,70,0.35);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 10px 10px;
+}
+.order-notes-section .order-section-title { color: #e63946; margin-bottom: 4px; }
+.order-notes-text {
+    color: #f0f0f0;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    gap: 15px;
+}
+.empty-icon { font-size: 80px; }
+.empty-state h3 { color: #ffffff; font-size: 24px; margin: 0; }
+.empty-state p  { color: #aaaaaa; font-size: 16px; margin: 0; }
+
+.btn-done-kitchen,
+.btn-done-bar {
+    width: 100%;
+    padding: 10px;
+    background-color: transparent;
+    border: 2px solid #2ecc71;
+    color: #2ecc71;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-done-kitchen:hover,
+.btn-done-bar:hover {
+    background-color: #2ecc71;
+    color: #121212;
+    font-weight: bold;
+}
+
+/* ===== MÓVIL ===== */
+@media (max-width: 480px) {
+    .menu-header {
+        padding: 14px 16px;
+    }
+    .menu-header h2 { font-size: 18px; }
+
+    .dishes-body {
+        padding: 16px;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
