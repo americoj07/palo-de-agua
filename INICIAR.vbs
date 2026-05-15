@@ -7,6 +7,12 @@ basePath     = oFSO.GetParentFolderName(WScript.ScriptFullName)
 backendPath  = basePath & "\backend"
 frontendPath = basePath & "\frontend"
 
+' ── Arrancar MySQL en Ubuntu (WSL) ──────────────────────────────────
+oShell.Run "cmd /c wsl -u siragon sudo service mysql start", 0, True
+
+' ── Esperar 3 segundos para que MySQL levante ───────────────────────
+WScript.Sleep 3000
+
 ' ── Arrancar servidor (backend) en segundo plano ────────────────────
 oShell.Run "cmd /c cd /d """ & backendPath & """ && node server.js", 0, False
 

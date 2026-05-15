@@ -6,6 +6,20 @@ const fs         = require("fs");
 const path       = require("path");
 
 // ================================================================
+// ===== BASE DE DATOS MySQL (archivo separado: db.js) =============
+// ================================================================
+// Si MySQL no está disponible, el sistema sigue funcionando igual.
+// Solo se perderá el historial de ventas en la BD.
+let db = null;
+try {
+    db = require("./db");
+    console.log("✅ Módulo db.js cargado — MySQL habilitado");
+} catch (e) {
+    console.warn("⚠️  db.js no encontrado — sistema funciona sin MySQL");
+}
+// ================================================================
+
+// ================================================================
 // ===== SISTEMA DE PERSISTENCIA (proteccion ante apagones) ========
 // ================================================================
 const STORE_FILE = path.join(__dirname, "store.json");
@@ -182,6 +196,40 @@ function partirTexto(texto, max) {
 
 const COCINA_CATS = ["tickets", "dishes", "other"];
 const BARRA_CATS  = ["drinks"];
+
+// ================================================================
+// ===== RUTAS API — Estadísticas MySQL ============================
+// ================================================================
+// GET /api/stats?dias=7&categoria=platos  → top platos/bebidas
+// GET /api/stats?dias=15&categoria=bebidas
+// GET /api/stats?dias=30                  → todos (platos+bebidas)
+// GET /api/stats/mes?mes=2026-05          → resumen del mes
+// ================================================================
+
+app.get("/api/stats", async (req, res) => {
+    if (!db) return res.json({ ok: false, error: "MySQL no configurado" });
+    try {
+        const dias      = parseInt(req.query.dias) || 30;
+        const categoria = req.query.categoria      || "all";
+        const datos     = await db.obtenerEstadisticas(dias, categoria);
+        res.json({ ok: true, dias, categoria, datos });
+    } catch (err) {
+        res.json({ ok: false, error: err.message });
+    }
+});
+
+app.get("/api/stats/mes", async (req, res) => {
+    if (!db) return res.json({ ok: false, error: "MySQL no configurado" });
+    try {
+        const mesAnio = req.query.mes || null;
+        const resumen = await db.obtenerResumenMes(mesAnio);
+        res.json({ ok: true, resumen });
+    } catch (err) {
+        res.json({ ok: false, error: err.message });
+    }
+});
+
+// ================================================================
 
 io.on("connection", (socket) => {
     console.log("Dispositivo conectado:", socket.id);
@@ -816,6 +864,14 @@ io.on("connection", (socket) => {
         store.tables = store.tables.filter(t => t.id !== tableId);
         saveStore();
         io.emit("store-update", store);
+
+        // ✅ Guardar en MySQL en segundo plano (no bloquea nada)
+        if (db) {
+            const tablaCerrada = store.closedTables[store.closedTables.length - 1];
+            db.guardarVenta(tablaCerrada).catch(err =>
+                console.error("MySQL close-table:", err.message)
+            );
+        }
     });
 
     // ===== COCINA TERMINA =====
