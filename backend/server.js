@@ -2,6 +2,39 @@ const express    = require("express");
 const http       = require("http");
 const { Server } = require("socket.io");
 const cors       = require("cors");
+const fs         = require("fs");
+const path       = require("path");
+
+// ================================================================
+// ===== SISTEMA DE PERSISTENCIA (proteccion ante apagones) ========
+// ================================================================
+const STORE_FILE = path.join(__dirname, "store.json");
+
+function saveStore() {
+    try {
+        fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), "utf8");
+    } catch (e) {
+        console.error("\u274c Error guardando store.json:", e.message);
+    }
+}
+
+function loadStore() {
+    try {
+        if (fs.existsSync(STORE_FILE)) {
+            const raw  = fs.readFileSync(STORE_FILE, "utf8");
+            const data = JSON.parse(raw);
+            console.log("\u2705 Store recuperado desde store.json");
+            console.log("   \u2514\u2500 Mesas abiertas  :", data.tables?.length ?? 0);
+            console.log("   \u2514\u2500 Mesas cerradas  :", data.closedTables?.length ?? 0);
+            console.log("   \u2514\u2500 Propinas        : $" + (data.totalTips ?? 0).toLocaleString());
+            return data;
+        }
+    } catch (e) {
+        console.error("\u274c Error cargando store.json (se inicia desde cero):", e.message);
+    }
+    return null;
+}
+// ================================================================
 
 const MODO_SIMULACION = false;
 
@@ -20,7 +53,9 @@ const io     = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"
 app.use(cors());
 app.use(express.json());
 
-const store = { tables: [], closedTables: [], totalTips: 0 };
+// ✅ Carga el estado guardado o empieza desde cero
+const savedStore = loadStore();
+const store = savedStore ?? { tables: [], closedTables: [], totalTips: 0 };
 
 // ===== COMANDOS ESC/POS MANUALES =====
 const ESC = 0x1B;
@@ -160,7 +195,8 @@ io.on("connection", (socket) => {
         table.notes = notes;
         clearTimeout(notesTimers[tableId]);
         notesTimers[tableId] = setTimeout(() => {
-            io.emit("store-update", store);
+            saveStore();
+        io.emit("store-update", store);
         }, 800);
     });
 
@@ -174,6 +210,7 @@ io.on("connection", (socket) => {
         );
         if (!item) return;
         item.note = note || null;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -400,7 +437,8 @@ io.on("connection", (socket) => {
                         item.printed = true;
                     }
                 });
-                io.emit("store-update", store);
+                saveStore();
+        io.emit("store-update", store);
             }
 
             socket.emit("print-success");
@@ -524,7 +562,8 @@ io.on("connection", (socket) => {
                         item.printed = true;
                     }
                 });
-                io.emit("store-update", store);
+                saveStore();
+        io.emit("store-update", store);
             }
 
             socket.emit("print-success");
@@ -549,6 +588,7 @@ io.on("connection", (socket) => {
         }
         table.id    = newId;
         table.label = `Mesa ${newId}`;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -702,6 +742,7 @@ io.on("connection", (socket) => {
         if (alreadyOpen) { socket.emit("error", "La mesa " + newTable.id + " ya esta abierta"); return; }
         store.tables = store.tables.filter(t => t.id !== newTable.id);
         store.tables.push(newTable);
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -725,6 +766,7 @@ io.on("connection", (socket) => {
         }
         if (COCINA_CATS.includes(item.category)) table.kitchenDone = false;
         if (BARRA_CATS.includes(item.category))  table.barDone     = false;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -755,6 +797,7 @@ io.on("connection", (socket) => {
             }
         }
         if (item.quantity > 0) item.subtotal = item.price * item.quantity;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -769,8 +812,9 @@ io.on("connection", (socket) => {
             createdAt: table.createdAt, closedAt: new Date().toLocaleString("es-CO"),
             order: [...table.order], subtotal, service, total
         });
-        // ✅ Eliminar de store.tables — evita colisión de IDs al renombrar mesas
+        //  Eliminar de store.tables — evita colisión de IDs al renombrar mesas
         store.tables = store.tables.filter(t => t.id !== tableId);
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -782,6 +826,7 @@ io.on("connection", (socket) => {
             if (COCINA_CATS.includes(item.category) && !item.servedKitchen) item.servedKitchen = true;
         });
         table.kitchenDone = true;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -793,12 +838,14 @@ io.on("connection", (socket) => {
             if (BARRA_CATS.includes(item.category) && !item.servedBar) item.servedBar = true;
         });
         table.barDone = true;
+        saveStore();
         io.emit("store-update", store);
     });
 
     // ===== AGREGAR PROPINA =====
     socket.on("add-tip", ({ amount }) => {
         store.totalTips = (store.totalTips || 0) + amount;
+        saveStore();
         io.emit("store-update", store);
     });
 
@@ -806,6 +853,7 @@ io.on("connection", (socket) => {
     socket.on("clear-history", () => {
         store.closedTables = [];
         store.totalTips    = 0;
+        saveStore();
         io.emit("store-update", store);
     });
 

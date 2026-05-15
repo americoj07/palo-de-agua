@@ -46,6 +46,33 @@ export function openTableDetail(tableId) {
                 </div>
             </div>
 
+            <!-- ===== MODAL ÍTEM PERSONALIZADO ===== -->
+            <div class="notes-modal-overlay hidden" id="custom-item-overlay">
+                <div class="notes-modal">
+                    <div class="notes-modal-header">
+                        <span>✨ Ítem personalizado</span>
+                        <button class="notes-modal-close" id="btn-close-custom-item">✕</button>
+                    </div>
+                    <div class="custom-item-body">
+                        <label class="custom-item-label">Nombre del ítem</label>
+                        <input type="text" id="custom-item-name" class="custom-item-input"
+                            placeholder="Ej: Copa de vino, Bandeja especial..." autocomplete="off"/>
+                        <label class="custom-item-label">Precio</label>
+                        <input type="number" id="custom-item-price" class="custom-item-input"
+                            placeholder="Ej: 15000" min="0"/>
+                        <label class="custom-item-label">¿A dónde va?</label>
+                        <div class="custom-item-dest">
+                            <button class="custom-dest-btn active" data-dest="other" id="dest-cocina">🍳 Cocina</button>
+                            <button class="custom-dest-btn" data-dest="drinks" id="dest-barra">🥤 Barra</button>
+                        </div>
+                    </div>
+                    <div class="notes-modal-footer">
+                        <button class="btn-notes-cancel" id="btn-cancel-custom-item">Cancelar</button>
+                        <button class="btn-notes-save" id="btn-save-custom-item">✅ Agregar</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- ===== PANEL PEDIDO ===== -->
             <div class="panel-order hidden" id="panel-order">
                 <div id="order-list"></div>
@@ -65,6 +92,14 @@ export function openTableDetail(tableId) {
                 </div>
 
                 <div class="action-btns">
+                    <button class="btn-custom-item-icon" id="btn-custom-item-desktop" title="Ítem personalizado">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                    </button>
                     <div class="btn-print-group">
                         <button class="btn-print-order">🖨️ Pedido</button>
                         <button class="btn-reprint-order" title="Reimprimir último pedido">↑</button>
@@ -80,6 +115,14 @@ export function openTableDetail(tableId) {
 
         <!-- Barra acción móvil SIN botón de notas global -->
         <div class="mobile-action-bar">
+            <button class="btn-custom-item-icon" id="btn-custom-item" title="Ítem personalizado">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+            </button>
             <div class="btn-print-group">
                 <button class="btn-print-order mob">🖨️ Pedido</button>
                 <button class="btn-reprint-order mob" title="Reimprimir último pedido">↑</button>
@@ -213,6 +256,73 @@ export function openTableDetail(tableId) {
 
     modal.querySelector("#order-list").addEventListener("click", handleNoteClick);
     modal.querySelector("#mobile-order-panel").addEventListener("click", handleNoteClick);
+
+    // ===== MODAL ÍTEM PERSONALIZADO =====
+    const customItemOverlay = modal.querySelector("#custom-item-overlay");
+    let customDest = "other"; // default: cocina
+
+    const openCustomItemModal = () => {
+        modal.querySelector("#custom-item-name").value  = "";
+        modal.querySelector("#custom-item-price").value = "";
+        customDest = "other";
+        modal.querySelectorAll(".custom-dest-btn").forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-dest") === "other");
+        });
+        customItemOverlay.classList.remove("hidden");
+        setTimeout(() => modal.querySelector("#custom-item-name").focus(), 50);
+    };
+    const closeCustomItemModal = () => customItemOverlay.classList.add("hidden");
+
+    modal.querySelector("#btn-custom-item").addEventListener("click", openCustomItemModal);
+    const desktopCustomBtn = modal.querySelector("#btn-custom-item-desktop");
+    if (desktopCustomBtn) desktopCustomBtn.addEventListener("click", openCustomItemModal);
+    modal.querySelector("#btn-close-custom-item").addEventListener("click", closeCustomItemModal);
+    modal.querySelector("#btn-cancel-custom-item").addEventListener("click", closeCustomItemModal);
+    customItemOverlay.addEventListener("click", (e) => { if (e.target === customItemOverlay) closeCustomItemModal(); });
+
+    modal.querySelectorAll(".custom-dest-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            customDest = btn.getAttribute("data-dest");
+            modal.querySelectorAll(".custom-dest-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+        });
+    });
+
+    modal.querySelector("#btn-save-custom-item").addEventListener("click", () => {
+        const nameInput  = modal.querySelector("#custom-item-name");
+        const priceInput = modal.querySelector("#custom-item-price");
+        const name  = nameInput.value.trim();
+        const price = parseInt(priceInput.value);
+
+        if (!name) { alert("Por favor escribe un nombre para el ítem"); nameInput.focus(); return; }
+        if (isNaN(price) || price < 0) { alert("Por favor ingresa un precio válido"); priceInput.focus(); return; }
+
+        const customTable = store.tables.find(t => t.id === tableId);
+        if (!customTable) return;
+
+        socket.emit("add-item", {
+            tableId,
+            item: {
+                id:            Date.now(),   // ID único para este ítem
+                category:      customDest,   // "other" → cocina | "drinks" → barra
+                name,
+                price,
+                quantity:      1,
+                subtotal:      price,
+                term:          null,
+                note:          null,
+                servedKitchen: false,
+                servedBar:     false,
+                printed:       false
+            }
+        });
+
+        closeCustomItemModal();
+
+        // Feedback visual: ir al panel de pedido
+        const orderBtn = modal.querySelector(".view-toggle-btn[data-view='order']");
+        if (orderBtn) orderBtn.click();
+    });
 
     // ===== IMPRIMIR PEDIDO =====
     const handlePrintOrder = () => {
