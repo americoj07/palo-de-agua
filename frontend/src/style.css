@@ -31,6 +31,16 @@ nav {
     z-index: 500;
 }
 
+/* Ocultar nav en login */
+nav.nav-hidden {
+    display: none;
+}
+
+/* Cuando nav está oculto, el app ocupa toda la pantalla */
+body:has(nav.nav-hidden) #app {
+    min-height: 100vh;
+}
+
 .logo {
     display: flex;
     align-items: center;
@@ -76,6 +86,7 @@ nav {
     background-color: #2a2a2a;
 }
 
+/* Botón base (Mesero / cerrar sesión) */
 .nav-login {
     color: #ffffff;
     text-decoration: none;
@@ -85,9 +96,25 @@ nav {
     border-radius: 8px;
     transition: all 0.2s;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .nav-login:hover {
+    background-color: #e63946;
+    color: #ffffff;
+}
+
+/* Estado: sesión activa → botón muestra X rojo */
+.nav-login.logged-in {
+    border-color: #e63946;
+    color: #e63946;
+    font-size: 18px;
+    padding: 4px 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.nav-login.logged-in:hover {
     background-color: #e63946;
     color: #ffffff;
 }
@@ -108,7 +135,6 @@ nav {
         font-size: 20px;
     }
 
-    /* Nav links más compactos */
     .nav-link {
         gap: 2px;
     }

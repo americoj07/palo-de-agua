@@ -7,14 +7,52 @@ const USUARIOS = [
     { usuario: "cocina",   clave: "cocina", rol: "cocina"   },
 ];
 
-export function login(container) {
-    if (!document.getElementById("login-styles")) {
-        const link = document.createElement("link");
-        link.id   = "login-styles";
-        link.rel  = "stylesheet";
-        link.href = "/page/login/login.css";   // ajusta la ruta si es diferente
-        document.head.appendChild(link);
+export function updateNav(ruta) {
+    const nav    = document.getElementById("main-nav");
+    const btn    = document.getElementById("nav-btn");
+    const logged = !!sessionStorage.getItem("rol");
+
+    // Ocultar nav solo en /login
+    if (ruta === "/login") {
+        nav.classList.add("nav-hidden");
+        return;
     }
+
+    nav.classList.remove("nav-hidden");
+
+    if (logged) {
+        // Sesión activa → botón X para cerrar sesión
+        btn.textContent = "Salir";
+        btn.classList.add("logged-in");
+        btn.removeAttribute("href");
+        btn.removeAttribute("data-link");
+        btn.onclick = (e) => {
+            e.preventDefault();
+            cerrarSesion();
+        };
+    } else {
+        // Sin sesión → botón Mesero normal
+        btn.textContent = "Mesero";s
+        btn.classList.remove("logged-in");
+        btn.setAttribute("href", "/login");
+        btn.setAttribute("data-link", "");
+        btn.onclick = null;
+    }
+}
+
+function cerrarSesion() {
+    sessionStorage.removeItem("rol");
+    setLoggedIn(false);
+    updateNav("/login");          // oculta el nav
+    window.navigateTo("/login");  // redirige al login
+}
+
+/* ─────────────────────────────────────────────
+   login()  — renderiza el formulario
+───────────────────────────────────────────── */
+export function login(container) {
+    // Ocultar nav mientras estamos en /login
+    updateNav("/login");
 
     container.innerHTML = `
     <div class="login-page">
@@ -27,8 +65,8 @@ export function login(container) {
                 <div class="login-circle"></div>
             </div>
 
-            <div class="login-brand"
-                <span class="login-brand-icon"></span>
+            <div class="login-brand">
+                <span class="login-brand-icon">🌿</span>
                 <h1 class="login-brand-name">Palo de Agua</h1>
                 <p class="login-brand-sub">Restaurante</p>
                 <div class="login-divider"></div>
@@ -106,11 +144,9 @@ export function login(container) {
     const errorBox     = container.querySelector("#login-error");
     const errorMsg     = container.querySelector("#login-error-msg");
 
-
     [inputUsuario, inputClave].forEach(el => {
         el.addEventListener("input", () => errorBox.classList.remove("visible"));
     });
-
 
     [inputUsuario, inputClave].forEach(el => {
         el.addEventListener("keydown", (e) => {
@@ -123,7 +159,6 @@ export function login(container) {
     function mostrarError(msg) {
         errorMsg.textContent = msg;
         errorBox.classList.remove("visible");
-        // forzar reflow para reiniciar animación shake
         void errorBox.offsetWidth;
         errorBox.classList.add("visible");
     }
@@ -137,7 +172,6 @@ export function login(container) {
             return;
         }
 
-        // Simular pequeño delay de red
         btn.classList.add("loading");
         btn.disabled = true;
 
@@ -150,10 +184,10 @@ export function login(container) {
             btn.disabled = false;
 
             if (encontrado) {
-                // Guardar sesión
                 setLoggedIn(true);
                 sessionStorage.setItem("rol", encontrado.rol);
-                // Navegar a la vista principal
+                // Mostrar nav y actualizar botón ANTES de navegar
+                updateNav("/tables");
                 window.navigateTo("/tables");
             } else {
                 mostrarError("Usuario o contraseña incorrectos");
@@ -163,6 +197,5 @@ export function login(container) {
         }, 600);
     }
 
-    // Foco automático al cargar
     setTimeout(() => inputUsuario.focus(), 100);
 }
