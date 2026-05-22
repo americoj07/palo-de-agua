@@ -22,7 +22,7 @@ export function updateNav(ruta) {
 
     if (logged) {
         // Sesión activa → botón X para cerrar sesión
-        btn.textContent = "Salir";
+        btn.textContent = "X";
         btn.classList.add("logged-in");
         btn.removeAttribute("href");
         btn.removeAttribute("data-link");

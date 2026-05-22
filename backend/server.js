@@ -232,7 +232,7 @@ app.get("/api/ventas/items", async (req, res) => {
                 SUM(vi.subtotal) AS total_ingresos
              FROM ventas_items vi
              JOIN ventas v ON v.id = vi.venta_id
-             WHERE DATE(v.cerrada_at) BETWEEN ? AND ?
+             WHERE v.fecha_cierre BETWEEN ? AND ?
              GROUP BY vi.nombre, vi.categoria
              ORDER BY total_vendido DESC`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
@@ -252,7 +252,7 @@ app.get("/api/ventas/resumen", async (req, res) => {
                 COALESCE(SUM(servicio),0) AS total_servicio,
                 COALESCE(SUM(subtotal),0) AS total_subtotal
              FROM ventas
-             WHERE DATE(cerrada_at) BETWEEN ? AND ?`,
+             WHERE fecha_cierre BETWEEN ? AND ?`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
         );
         res.json(r);
@@ -264,14 +264,14 @@ app.get("/api/ventas/dia", async (req, res) => {
     const { desde, hasta } = req.query;
     try {
         const [rows] = await db.pool.execute(
-            `SELECT DATE(cerrada_at) AS dia,
+            `SELECT fecha_cierre AS dia,
                 COUNT(*)         AS total_mesas,
                 SUM(total)       AS total_recaudado,
                 SUM(servicio)    AS total_servicio,
                 SUM(subtotal)    AS sin_servicio
              FROM ventas
-             WHERE DATE(cerrada_at) BETWEEN ? AND ?
-             GROUP BY dia ORDER BY dia DESC`,
+             WHERE fecha_cierre BETWEEN ? AND ?
+             GROUP BY fecha_cierre ORDER BY fecha_cierre DESC`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
         );
         res.json(rows);
@@ -287,8 +287,8 @@ app.get("/api/ventas/mesas-dia", async (req, res) => {
         const [ventas] = await db.pool.execute(
             `SELECT id, tipo, mesa_numero, subtotal, servicio, total, cerrada_at
              FROM ventas
-             WHERE DATE(cerrada_at) = ?
-             ORDER BY cerrada_at DESC`,
+             WHERE fecha_cierre = ?
+             ORDER BY id DESC`,
             [dia || new Date().toISOString().slice(0, 10)]
         );
         // Traer todos los items de esas ventas

@@ -1,9 +1,9 @@
 import "./ventas.css";
 
-const API = "http://localhost:3000/api/ventas";
+const API = `http://${window.location.hostname}:3000/api/ventas`;
 
 export function ventas(container) {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy    = new Date().toISOString().slice(0, 10);
     const hace30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 
     container.innerHTML = `
@@ -29,8 +29,105 @@ export function ventas(container) {
         <div id="ventas-cat-tabs" class="ventas-cat-tabs"></div>
         <div id="ventas-contenido"></div>
     </div>
+
+    <!-- ===== MODAL FACTURA ===== -->
+    <div class="factura-overlay hidden" id="factura-overlay">
+        <div class="factura-modal">
+            <div class="factura-modal-header">
+                <h3>Vista previa de factura</h3>
+                <button class="factura-close" id="factura-close">✕</button>
+            </div>
+            <div class="factura-body" id="factura-body"></div>
+            <div class="factura-footer">
+                <button class="btn-factura-cerrar"   id="btn-factura-cerrar">Cerrar</button>
+                <button class="btn-factura-imprimir" id="btn-factura-imprimir">🖨️ Imprimir</button>
+            </div>
+        </div>
+    </div>
     `;
 
+    // ===== MODAL FACTURA =====
+    const overlay = document.getElementById("factura-overlay");
+    document.getElementById("factura-close").addEventListener("click",     () => overlay.classList.add("hidden"));
+    document.getElementById("btn-factura-cerrar").addEventListener("click", () => overlay.classList.add("hidden"));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.add("hidden"); });
+
+    document.getElementById("btn-factura-imprimir").addEventListener("click", () => {
+        const body    = document.getElementById("factura-body").innerHTML;
+        const ventana = window.open("", "_blank");
+        ventana.document.write(`
+            <html><head><title></title>
+            <style>
+                @page { margin: 0; size: 80mm auto; }
+                @media print { html, body { margin: 0; padding: 0; } }
+                body { font-family: monospace; max-width: 320px; margin: 0 auto; padding: 20px; font-size: 13px; }
+                .f-titulo { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+                .f-sub    { text-align: center; color: #555; margin-bottom: 2px; font-size: 12px; }
+                .f-linea  { border-top: 1px dashed #999; margin: 8px 0; }
+                .f-item   { display: flex; justify-content: space-between; margin: 3px 0; }
+                .f-item-nombre { flex: 1; }
+                .f-item-cant   { width: 30px; text-align: center; }
+                .f-item-precio { width: 80px; text-align: right; }
+                .f-total-row   { display: flex; justify-content: space-between; margin: 3px 0; }
+                .f-gran-total  { font-weight: bold; font-size: 15px; }
+                .f-centro      { text-align: center; margin-top: 8px; color: #555; font-size: 12px; }
+            </style></head>
+            <body>${body}<script>window.print(); window.onafterprint = () => window.close();<\/script>
+            </body></html>
+        `);
+        ventana.document.close();
+    });
+
+    function mostrarFactura(mesa) {
+        const fmt      = (n) => `$${Number(n || 0).toLocaleString("es-CO")}`;
+        const hora     = mesa.cerrada_at || "—";
+        const servicio = Number(mesa.servicio) > 0;
+
+        const itemsHtml = mesa.items.map(item => `
+            <div class="f-item">
+                <span class="f-item-nombre">${item.nombre}</span>
+                <span class="f-item-cant">x${item.cantidad}</span>
+                <span class="f-item-precio">${fmt(item.subtotal)}</span>
+            </div>
+        `).join("");
+
+        document.getElementById("factura-body").innerHTML = `
+            <div class="f-titulo">PALO DE AGUA</div>
+            <div class="f-sub">RESTAURANTE</div>
+            <div class="f-sub">Cra 69 #73-91 | Tel: 300-4524371</div>
+            <div class="f-linea"></div>
+            <div class="f-sub">${hora}</div>
+            <div class="f-linea"></div>
+            <div class="f-item" style="font-weight:bold;">
+                <span class="f-item-nombre">Descripción</span>
+                <span class="f-item-cant">Cant</span>
+                <span class="f-item-precio">Total</span>
+            </div>
+            <div class="f-linea"></div>
+            ${itemsHtml}
+            <div class="f-linea"></div>
+            <div class="f-total-row">
+                <span>Subtotal:</span>
+                <span>${fmt(mesa.subtotal)}</span>
+            </div>
+            ${servicio ? `
+            <div class="f-total-row">
+                <span>Servicio (10%):</span>
+                <span>${fmt(mesa.servicio)}</span>
+            </div>` : ""}
+            <div class="f-linea"></div>
+            <div class="f-total-row f-gran-total">
+                <span>TOTAL:</span>
+                <span>${fmt(mesa.total)}</span>
+            </div>
+            <div class="f-linea"></div>
+            <div class="f-centro">¡Gracias por su visita!</div>
+        `;
+
+        overlay.classList.remove("hidden");
+    }
+
+    // ===== TABS =====
     let tabActual  = "items";
     let catActual  = "all";
     let datosItems = [];
@@ -49,13 +146,12 @@ export function ventas(container) {
 
     container.querySelector("#btn-buscar").addEventListener("click", cargar);
 
-    const fmt = (n) => `$${Number(n || 0).toLocaleString("es-CO")}`;
-
+    const fmt      = (n) => `$${Number(n || 0).toLocaleString("es-CO")}`;
     const fmtFecha = (d) => {
         const fecha = new Date(d);
-        const dia  = String(fecha.getUTCDate()).padStart(2, "0");
-        const mes  = String(fecha.getUTCMonth() + 1).padStart(2, "0");
-        const anio = fecha.getUTCFullYear();
+        const dia   = String(fecha.getUTCDate()).padStart(2, "0");
+        const mes   = String(fecha.getUTCMonth() + 1).padStart(2, "0");
+        const anio  = fecha.getUTCFullYear();
         return `${dia}/${mes}/${anio}`;
     };
 
@@ -64,7 +160,6 @@ export function ventas(container) {
         const resumenEl = document.getElementById("ventas-resumen");
 
         if (tabActual === "dia") {
-            // Solo un selector de fecha
             filtrosEl.innerHTML = `
                 <label>Selecciona el día</label>
                 <input type="date" id="v-dia" value="${hoy}" />
@@ -72,7 +167,6 @@ export function ventas(container) {
             `;
             resumenEl.innerHTML = "";
         } else {
-            // Rango de fechas normal
             filtrosEl.innerHTML = `
                 <label>Desde</label>
                 <input type="date" id="v-desde" value="${hace30}" />
@@ -92,12 +186,12 @@ export function ventas(container) {
         contenido.innerHTML = `<p class="loading">Cargando...</p>`;
         catTabsEl.innerHTML = "";
 
-        // ===== TAB DÍA — selector único =====
+        // ===== TAB DÍA =====
         if (tabActual === "dia") {
-            const dia = document.getElementById("v-dia")?.value || hoy;
+            const dia   = document.getElementById("v-dia")?.value || hoy;
             resumenEl.innerHTML = "";
 
-            const res  = await fetch(`${API}/mesas-dia?dia=${dia}`);
+            const res   = await fetch(`${API}/mesas-dia?dia=${dia}`);
             const mesas = await res.json();
 
             if (!mesas.length) {
@@ -118,13 +212,16 @@ export function ventas(container) {
 
             contenido.innerHTML = mesas.map((mesa, idx) => {
                 const label = mesa.tipo === "llevar" ? "🥡 Llevar" : `Mesa ${mesa.mesa_numero}`;
-                const hora  = new Date(mesa.cerrada_at).toLocaleString("es-CO");
+                const hora  = mesa.cerrada_at || "—";
                 return `
                 <div class="dia-mesa-card">
                     <div class="dia-mesa-header">
                         <span class="dia-mesa-title">${label}</span>
                         <span class="dia-mesa-hora">🕐 ${hora}</span>
-                        <button class="btn-toggle-dia" data-idx="${idx}">Ver detalle ▼</button>
+                        <div class="dia-mesa-btns">
+                            <button class="btn-toggle-dia" data-idx="${idx}">Ver detalle ▼</button>
+                            <button class="btn-reimprimir" data-idx="${idx}">🖨️ Reimprimir</button>
+                        </div>
                     </div>
                     <div class="dia-mesa-totales">
                         <span>Subtotal: ${fmt(mesa.subtotal)}</span>
@@ -143,24 +240,32 @@ export function ventas(container) {
                 </div>`;
             }).join("");
 
-            // Eventos expandir/colapsar
+            // Expandir/colapsar
             contenido.querySelectorAll(".btn-toggle-dia").forEach(btn => {
                 btn.addEventListener("click", () => {
-                    const idx    = btn.dataset.idx;
+                    const idx     = btn.dataset.idx;
                     const detalle = document.getElementById(`dia-detalle-${idx}`);
                     const hidden  = detalle.classList.contains("hidden");
                     detalle.classList.toggle("hidden");
                     btn.textContent = hidden ? "Ocultar ▲" : "Ver detalle ▼";
                 });
             });
+
+            // Reimprimir
+            contenido.querySelectorAll(".btn-reimprimir").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const mesa = mesas[Number(btn.dataset.idx)];
+                    mostrarFactura(mesa);
+                });
+            });
+
             return;
         }
 
-        // ===== TABS ITEMS y VENTAS — rango de fechas =====
+        // ===== TABS ITEMS y VENTAS =====
         const desde = document.getElementById("v-desde")?.value || hace30;
         const hasta = document.getElementById("v-hasta")?.value || hoy;
 
-        // Resumen siempre visible en items y ventas
         try {
             const res = await fetch(`${API}/resumen?desde=${desde}&hasta=${hasta}`);
             const r   = await res.json();
@@ -186,12 +291,8 @@ export function ventas(container) {
             contenido.innerHTML = `
                 <table class="ventas-tabla">
                     <thead><tr>
-                        <th>#</th>
-                        <th>Fecha</th>
-                        <th>Mesas</th>
-                        <th>Total recaudado</th>
-                        <th>Servicio</th>
-                        <th>Sin servicio</th>
+                        <th>#</th><th>Fecha</th><th>Mesas</th>
+                        <th>Total recaudado</th><th>Servicio</th><th>Sin servicio</th>
                     </tr></thead>
                     <tbody>
                         ${rows.map((r, i) => `
@@ -211,11 +312,11 @@ export function ventas(container) {
 
     function renderCatTabs(el) {
         el.innerHTML = `
-            <button class="ventas-cat-tab ${catActual === "all"     ? "active" : ""}" data-cat="all">Todos</button>
-            <button class="ventas-cat-tab ${catActual === "dishes"  ? "active" : ""}" data-cat="dishes">🍽️ Platos</button>
-            <button class="ventas-cat-tab ${catActual === "drinks"  ? "active" : ""}" data-cat="drinks">🍺 Bebidas</button>
-            <button class="ventas-cat-tab ${catActual === "tickets" ? "active" : ""}" data-cat="tickets">🧺 Entradas</button>
-            <button class="ventas-cat-tab ${catActual === "other"   ? "active" : ""}" data-cat="other">➕ Adiciones</button>
+            <button class="ventas-cat-tab ${catActual==="all"     ? "active":""}" data-cat="all">Todos</button>
+            <button class="ventas-cat-tab ${catActual==="dishes"  ? "active":""}" data-cat="dishes">🍽️ Platos</button>
+            <button class="ventas-cat-tab ${catActual==="drinks"  ? "active":""}" data-cat="drinks">🍺 Bebidas</button>
+            <button class="ventas-cat-tab ${catActual==="tickets" ? "active":""}" data-cat="tickets">🧺 Entradas</button>
+            <button class="ventas-cat-tab ${catActual==="other"   ? "active":""}" data-cat="other">➕ Adiciones</button>
         `;
         el.querySelectorAll(".ventas-cat-tab").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -232,11 +333,8 @@ export function ventas(container) {
         el.innerHTML = `
             <table class="ventas-tabla">
                 <thead><tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Categoría</th>
-                    <th>Cantidad vendida</th>
-                    <th>Total ingresos</th>
+                    <th>#</th><th>Nombre</th><th>Categoría</th>
+                    <th>Cantidad vendida</th><th>Total ingresos</th>
                 </tr></thead>
                 <tbody>
                     ${datos.map((r, i) => `

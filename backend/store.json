@@ -1,5 +1,230 @@
 {
   "tables": [],
-  "closedTables": [],
+  "closedTables": [
+    {
+      "closeId": "1779412001604-8ty8g",
+      "tableNumber": 5,
+      "id": 5,
+      "type": "mesa",
+      "label": "Mesa 5",
+      "createdAt": "21/5/2026, 8:06:20 p. m.",
+      "closedAt": "21/5/2026, 8:06:41 p. m.",
+      "order": [
+        {
+          "id": 127,
+          "category": "tickets",
+          "name": "Patacones con hogao",
+          "price": 15000,
+          "quantity": 1,
+          "subtotal": 15000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 128,
+          "category": "tickets",
+          "name": "Nachos con guacamole",
+          "price": 11000,
+          "quantity": 1,
+          "subtotal": 11000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 2,
+          "category": "dishes",
+          "name": "Viva mexico",
+          "price": 48000,
+          "quantity": 1,
+          "subtotal": 48000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 1,
+          "category": "dishes",
+          "name": "Alambre",
+          "price": 56000,
+          "quantity": 1,
+          "subtotal": 56000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 3,
+          "category": "dishes",
+          "name": "Fundido res y chicharron",
+          "price": 44500,
+          "quantity": 1,
+          "subtotal": 44500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 71,
+          "category": "drinks",
+          "name": "Pina",
+          "price": 8500,
+          "quantity": 1,
+          "subtotal": 8500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 70,
+          "category": "drinks",
+          "name": "Guanabana",
+          "price": 8500,
+          "quantity": 1,
+          "subtotal": 8500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 69,
+          "category": "drinks",
+          "name": "Jarra rosado",
+          "price": 70000,
+          "quantity": 1,
+          "subtotal": 70000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "subtotal": 261500,
+      "service": 0,
+      "total": 261500
+    },
+    {
+      "closeId": "1779413561903-ettky",
+      "tableNumber": 5,
+      "id": 5,
+      "type": "mesa",
+      "label": "Mesa 5",
+      "createdAt": "21/5/2026, 8:32:30 p. m.",
+      "closedAt": "21/5/2026, 8:32:41 p. m.",
+      "order": [
+        {
+          "id": 127,
+          "category": "tickets",
+          "name": "Patacones con hogao",
+          "price": 15000,
+          "quantity": 1,
+          "subtotal": 15000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 128,
+          "category": "tickets",
+          "name": "Nachos con guacamole",
+          "price": 11000,
+          "quantity": 1,
+          "subtotal": 11000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 1,
+          "category": "dishes",
+          "name": "Alambre",
+          "price": 56000,
+          "quantity": 1,
+          "subtotal": 56000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 2,
+          "category": "dishes",
+          "name": "Viva mexico",
+          "price": 48000,
+          "quantity": 1,
+          "subtotal": 48000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 3,
+          "category": "dishes",
+          "name": "Fundido res y chicharron",
+          "price": 44500,
+          "quantity": 1,
+          "subtotal": 44500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "subtotal": 174500,
+      "service": 0,
+      "total": 174500
+    },
+    {
+      "closeId": "1779413857156-gru02",
+      "tableNumber": 8,
+      "id": 8,
+      "type": "mesa",
+      "label": "Mesa 8",
+      "createdAt": "21/5/2026, 8:37:21 p. m.",
+      "closedAt": "21/5/2026, 8:37:37 p. m.",
+      "order": [
+        {
+          "id": 10,
+          "category": "dishes",
+          "name": "Tacos carnitas X3",
+          "price": 32000,
+          "quantity": 10,
+          "subtotal": 320000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "subtotal": 320000,
+      "service": 0,
+      "total": 320000
+    }
+  ],
   "totalTips": 0
 }

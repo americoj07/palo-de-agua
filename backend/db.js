@@ -44,10 +44,13 @@ async function guardarVenta(tablaCerrada) {
     try {
         await conn.beginTransaction();
 
+        // fecha_cierre en formato YYYY-MM-DD para poder filtrar correctamente
+        const fechaCierre = new Date().toISOString().slice(0, 10);
+
         const [result] = await conn.execute(
             `INSERT INTO ventas
-                (close_id, tipo, mesa_numero, mesa_label, subtotal, servicio, total, creada_at, cerrada_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (close_id, tipo, mesa_numero, mesa_label, subtotal, servicio, total, creada_at, cerrada_at, fecha_cierre)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tablaCerrada.closeId,
                 tablaCerrada.type        || "mesa",
@@ -58,6 +61,7 @@ async function guardarVenta(tablaCerrada) {
                 tablaCerrada.total       || 0,
                 tablaCerrada.createdAt   || null,
                 tablaCerrada.closedAt    || null,
+                fechaCierre,
             ]
         );
 
