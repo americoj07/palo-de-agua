@@ -236,3 +236,34 @@
     .closed-table-totals { gap: 10px; }
     .closed-table-time { font-size: 11px; }
 }
+/* ===== BOTÓN DEVOLVER MESA ===== */
+.closed-table-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    border-top: 1px solid #333;
+    margin-top: 8px;
+}
+
+.btn-reopen-table {
+    background: transparent;
+    border: 1px solid #444;
+    color: #aaaaaa;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-reopen-table:hover {
+    border-color: #e63946;
+    color: #e63946;
+}
+
+.btn-reopen-table:active { transform: scale(0.97); }
+
+@media (max-width: 480px) {
+    .btn-reopen-table { font-size: 11px; padding: 5px 10px; }
+}

@@ -123,6 +123,8 @@ export function tables(container) {
         });
 
         closeMesaModal();
+        // Abrir detalle de la mesa recién creada directamente
+        setTimeout(() => openTableDetail(tableId), 120);
     });
 
     document.getElementById("mesa-input").addEventListener("keydown", (e) => {
@@ -131,20 +133,70 @@ export function tables(container) {
 
     document.getElementById("btn-tipo-llevar").addEventListener("click", () => {
         closeOrderModal();
+        openLlevarModal();
+    });
+}
 
+// ===== MODAL NOMBRE PARA LLEVAR =====
+function openLlevarModal() {
+    const existing = document.getElementById("llevar-modal-overlay");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "llevar-modal-overlay";
+    overlay.className = "order-modal-overlay";
+    overlay.innerHTML = `
+        <div class="order-modal">
+            <div class="order-modal-header">
+                <h3>¿Nombre del pedido?</h3>
+                <button class="order-modal-close" id="btn-close-llevar-modal">✕</button>
+            </div>
+            <div class="order-modal-body">
+                <input
+                    type="text"
+                    id="llevar-name-input"
+                    placeholder="Ej: Juan, Mesa 3, Delivery..."
+                    maxlength="30"
+                    autocomplete="off"
+                />
+            </div>
+            <div class="order-modal-footer">
+                <button id="btn-cancel-llevar">Cancelar</button>
+                <button id="btn-confirm-llevar">✅ Confirmar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+    document.getElementById("btn-close-llevar-modal").addEventListener("click", closeModal);
+    document.getElementById("btn-cancel-llevar").addEventListener("click", closeModal);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+    const input = document.getElementById("llevar-name-input");
+    setTimeout(() => input.focus(), 50);
+
+    const confirm = () => {
+        const name     = input.value.trim();
         const llevarId = Date.now();
-
         socket.emit("add-table", {
             id:          llevarId,
             type:        "llevar",
             label:       "Llevar",
+            clientName:  name || "",
             status:      "open",
             order:       [],
             createdAt:   new Date().toLocaleString("es-CO"),
             kitchenDone: false,
             barDone:     false
         });
-    });
+        closeModal();
+        setTimeout(() => openTableDetail(llevarId), 120);
+    };
+
+    document.getElementById("btn-confirm-llevar").addEventListener("click", confirm);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirm(); });
 }
 
 export function renderTables() {
@@ -171,7 +223,9 @@ export function renderTables() {
             ` : ''}
             <strong>${table.type === 'llevar' ? '🥡' : table.id}</strong>
             <div class="table-card-info">
-                <span>${table.type === 'llevar' ? 'Para llevar' : 'Mesa'}</span>
+                <span>${table.type === 'llevar'
+                    ? (table.clientName ? `🥡 ${table.clientName}` : 'Para llevar')
+                    : 'Mesa'}</span>
                 <span class="table-card-time">${table.createdAt}</span>
             </div>
         </div>`

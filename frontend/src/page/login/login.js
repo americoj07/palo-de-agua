@@ -66,7 +66,6 @@ export function login(container) {
             </div>
 
             <div class="login-brand">
-                <span class="login-brand-icon">🌿</span>
                 <h1 class="login-brand-name">Palo de Agua</h1>
                 <p class="login-brand-sub">Restaurante</p>
                 <div class="login-divider"></div>

@@ -371,17 +371,16 @@ export function openTableDetail(tableId) {
     };
     modal.querySelectorAll(".btn-print-ticket").forEach(b => b.addEventListener("click", handlePrintTicket));
 
-    // ===== CERRAR CUENTA =====
+    // ===== CERRAR CUENTA — abre modal de devolución =====
     const handleCloseTable = () => {
-        const label = table.type === "llevar" ? "Para llevar" : `Mesa ${table.id}`;
-        if (!window.confirm(`¿Cerrar la cuenta de ${label}?`)) return;
         const currentTable   = store.tables.find(t => t.id === tableId);
+        if (!currentTable) return;
         const serviceCheck   = modal.querySelector("#service-check");
         const includeService = serviceCheck ? serviceCheck.checked : true;
         const subtotal       = currentTable.order.reduce((s, i) => s + i.subtotal, 0);
         const service        = includeService ? Math.round(subtotal * 0.10) : 0;
-        socket.emit("close-table", { tableId: table.id, subtotal, service, total: subtotal + service });
-        closeModal();
+        const total          = subtotal + service;
+        openDevueltaModal({ table: currentTable, subtotal, service, total, includeService, closeModal });
     };
     modal.querySelectorAll(".btn-close-table").forEach(b => b.addEventListener("click", handleCloseTable));
 
@@ -649,4 +648,127 @@ function buildOrderItemHTMLMob(item) {
                 ${locked ? 'disabled' : ''}>+</button>
         </div>
     </div>`;
+}
+
+// ===== MODAL DE DEVOLUCIÓN =====
+function openDevueltaModal({ table, subtotal, service, total, includeService, closeModal }) {
+    // Evitar duplicados
+    const existing = document.getElementById("devuelta-modal-overlay");
+    if (existing) existing.remove();
+
+    const label = table.type === "llevar" ? "🥡 Para llevar" : `Mesa ${table.id}`;
+
+    const overlay = document.createElement("div");
+    overlay.id = "devuelta-modal-overlay";
+    overlay.className = "devuelta-overlay";
+    overlay.innerHTML = `
+        <div class="devuelta-modal">
+            <div class="devuelta-title">${label}</div>
+
+            <div class="devuelta-total-row">
+                <div class="devuelta-total-box">
+                    <span class="devuelta-label">Total</span>
+                    <span class="devuelta-amount" id="dv-total">$${total.toLocaleString("es-CO")}</span>
+                </div>
+                <button class="devuelta-service-toggle ${includeService ? 'active' : ''}" id="dv-service-btn"
+                    title="${includeService ? 'Con servicio (10%)' : 'Sin servicio'}">
+                    ${includeService ? '✅ Con servicio' : '❌ Sin servicio'}
+                </button>
+            </div>
+
+            <div class="devuelta-input-box">
+                <label class="devuelta-label">Ingresa el monto:</label>
+                <input type="text" id="dv-input" placeholder="Ej: 200.000" inputmode="numeric" autocomplete="off"/>
+            </div>
+
+            <div class="devuelta-result-box">
+                <span class="devuelta-label">Devuelta:</span>
+                <span class="devuelta-result" id="dv-result">—</span>
+            </div>
+
+            <div class="devuelta-btns">
+                <button class="devuelta-btn-cancel" id="dv-cancel">Cancelar</button>
+                <button class="devuelta-btn-close"  id="dv-confirm">✖ Cerrar mesa</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Estado local del toggle
+    let currentTotal    = total;
+    let currentService  = service;
+    let currentSubtotal = subtotal;
+    let withService     = includeService;
+
+    const updateTotal = () => {
+        currentService = withService ? Math.round(currentSubtotal * 0.10) : 0;
+        currentTotal   = currentSubtotal + currentService;
+        document.getElementById("dv-total").textContent = `$${currentTotal.toLocaleString("es-CO")}`;
+        recalcDevuelta();
+    };
+
+    // Convierte "300.000" → 300000
+    const parseMontoInput = (val) => parseInt(val.replace(/\./g, ""), 10) || 0;
+
+    const recalcDevuelta = () => {
+        const input  = document.getElementById("dv-input");
+        const monto  = parseMontoInput(input.value);
+        const result = document.getElementById("dv-result");
+        if (!result) return;
+        if (monto <= 0) { result.textContent = "—"; result.className = "devuelta-result"; return; }
+        const devuelta = monto - currentTotal;
+        result.textContent = devuelta >= 0
+            ? `$${devuelta.toLocaleString("es-CO")}`
+            : `⚠️ Faltan $${Math.abs(devuelta).toLocaleString("es-CO")}`;
+        result.className = "devuelta-result " + (devuelta >= 0 ? "devuelta-ok" : "devuelta-neg");
+    };
+
+    // Toggle servicio
+    document.getElementById("dv-service-btn").addEventListener("click", () => {
+        withService = !withService;
+        const btn = document.getElementById("dv-service-btn");
+        btn.textContent = withService ? "✅ Con servicio" : "❌ Sin servicio";
+        btn.classList.toggle("active", withService);
+        updateTotal();
+    });
+
+    // Formato con puntos de miles mientras escribe
+    document.getElementById("dv-input").addEventListener("input", (e) => {
+        const input   = e.target;
+        const raw     = input.value.replace(/\./g, "").replace(/\D/g, ""); // solo dígitos
+        const cursor  = input.selectionStart;
+        const prevLen = input.value.length;
+
+        if (raw === "") { input.value = ""; recalcDevuelta(); return; }
+
+        const formatted = parseInt(raw, 10).toLocaleString("es-CO"); // agrega puntos
+        input.value = formatted;
+
+        // Mantener posición del cursor ajustada al cambio de largo
+        const diff = formatted.length - prevLen;
+        input.setSelectionRange(cursor + diff, cursor + diff);
+
+        recalcDevuelta();
+    });
+
+    // Focus automático
+    setTimeout(() => document.getElementById("dv-input")?.focus(), 80);
+
+    // Cancelar — solo cierra el modal de devolución
+    const closeOverlay = () => overlay.remove();
+    document.getElementById("dv-cancel").addEventListener("click", closeOverlay);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
+
+    // Cerrar mesa — emite al servidor y cierra ambos modales
+    document.getElementById("dv-confirm").addEventListener("click", () => {
+        socket.emit("close-table", {
+            tableId:  table.id,
+            subtotal: currentSubtotal,
+            service:  currentService,
+            total:    currentTotal
+        });
+        closeOverlay();
+        closeModal();
+    });
 }

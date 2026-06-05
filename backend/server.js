@@ -236,7 +236,7 @@ app.get("/api/ventas/items", async (req, res) => {
                 SUM(vi.subtotal) AS total_ingresos
              FROM ventas_items vi
              JOIN ventas v ON v.id = vi.venta_id
-             WHERE DATE(v.cerrada_at) BETWEEN ? AND ?
+             WHERE v.fecha_cierre BETWEEN ? AND ?
              GROUP BY vi.nombre, vi.categoria
              ORDER BY total_vendido DESC`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
@@ -256,7 +256,7 @@ app.get("/api/ventas/resumen", async (req, res) => {
                 COALESCE(SUM(servicio),0) AS total_servicio,
                 COALESCE(SUM(subtotal),0) AS total_subtotal
              FROM ventas
-             WHERE DATE(cerrada_at) BETWEEN ? AND ?`,
+             WHERE fecha_cierre BETWEEN ? AND ?`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
         );
         res.json(r);
@@ -268,14 +268,14 @@ app.get("/api/ventas/dia", async (req, res) => {
     const { desde, hasta } = req.query;
     try {
         const [rows] = await db.pool.execute(
-            `SELECT DATE(cerrada_at) AS dia,
+            `SELECT fecha_cierre AS dia,
                 COUNT(*)         AS total_mesas,
                 SUM(total)       AS total_recaudado,
                 SUM(servicio)    AS total_servicio,
                 SUM(subtotal)    AS sin_servicio
              FROM ventas
-             WHERE DATE(cerrada_at) BETWEEN ? AND ?
-             GROUP BY DATE(cerrada_at) ORDER BY dia DESC`,
+             WHERE fecha_cierre BETWEEN ? AND ?
+             GROUP BY fecha_cierre ORDER BY dia DESC`,
             [desde || "2000-01-01", hasta || "2099-12-31"]
         );
         res.json(rows);
@@ -289,7 +289,7 @@ app.get("/api/ventas/mesas-dia", async (req, res) => {
         const [ventas] = await db.pool.execute(
             `SELECT id, tipo, mesa_numero, subtotal, servicio, total, cerrada_at
              FROM ventas
-             WHERE DATE(cerrada_at) = ?
+             WHERE fecha_cierre = ?
              ORDER BY id DESC`,
             [dia || new Date().toISOString().slice(0, 10)]
         );
@@ -970,6 +970,35 @@ io.on("connection", (socket) => {
         store.totalTips    = 0;
         saveStore();
         io.emit("store-update", store);
+    });
+
+    // ===== DEVOLVER MESA AL SERVICIO =====
+    socket.on("reopen-table", ({ closeId }) => {
+        const idx = store.closedTables.findIndex(t => (t.closeId || t.id) === closeId);
+        if (idx === -1) return;
+        const cerrada = store.closedTables[idx];
+        const conflicto = store.tables.find(t => t.id === cerrada.id && t.status === "open");
+        if (conflicto) {
+            socket.emit("reopen-error", { message: `La mesa ${cerrada.id} ya está abierta` });
+            return;
+        }
+        store.closedTables.splice(idx, 1);
+        store.tables.push({
+            id:          cerrada.id,
+            type:        cerrada.type,
+            label:       cerrada.label,
+            status:      "open",
+            order:       cerrada.order || [],
+            createdAt:   cerrada.createdAt,
+            kitchenDone: false,
+            barDone:     false
+        });
+        saveStore();
+        io.emit("store-update", store);
+        if (db) {
+            db.pool.execute("DELETE FROM ventas WHERE close_id = ?", [closeId])
+                .catch(err => console.error("MySQL reopen-table:", err.message));
+        }
     });
 
     socket.on("disconnect", () => console.log("Dispositivo desconectado:", socket.id));

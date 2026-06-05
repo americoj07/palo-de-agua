@@ -1,2 +1,60 @@
 npm run dev -- --host
 
+Crear la base de datos si no existe
+CREATE DATABASE IF NOT EXISTS palo_de_agua
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+ 
+USE palo_de_agua;
+ 
+-- ================================================================
+-- TABLA: ventas
+-- Cada fila es una mesa cerrada (o pedido para llevar cerrado)
+-- ================================================================
+CREATE TABLE IF NOT EXISTS ventas (
+    id           INT            NOT NULL AUTO_INCREMENT,
+    close_id     VARCHAR(100)   DEFAULT NULL,          -- ID único generado al cerrar
+    tipo         VARCHAR(50)    DEFAULT NULL,          -- "mesa" | "llevar"
+    mesa_numero  VARCHAR(50)    DEFAULT NULL,          -- número de mesa o ID llevar
+    mesa_label   VARCHAR(100)   DEFAULT NULL,          -- "Mesa 5" | "Llevar"
+    subtotal     DECIMAL(12,2)  DEFAULT 0.00,          -- sin servicio
+    servicio     DECIMAL(12,2)  DEFAULT 0.00,          -- 10% si aplica
+    total        DECIMAL(12,2)  DEFAULT 0.00,          -- subtotal + servicio
+    creada_at    VARCHAR(100)   DEFAULT NULL,          -- hora apertura (texto es-CO)
+    cerrada_at   VARCHAR(100)   DEFAULT NULL,          -- hora cierre  (texto es-CO)
+    fecha_cierre DATE           DEFAULT NULL,          -- fecha cierre (DATE para filtros)
+ 
+    PRIMARY KEY (id),
+    INDEX idx_fecha_cierre (fecha_cierre)              -- índice para filtros por fecha
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+ 
+-- ================================================================
+-- TABLA: ventas_items
+-- Cada fila es un ítem del pedido de una venta
+-- ================================================================
+CREATE TABLE IF NOT EXISTS ventas_items (
+    id           INT            NOT NULL AUTO_INCREMENT,
+    venta_id     INT            NOT NULL,              -- FK → ventas.id
+    nombre       VARCHAR(200)   DEFAULT NULL,          -- nombre del producto
+    categoria    VARCHAR(100)   DEFAULT NULL,          -- "dishes"|"drinks"|"tickets"|"other"
+    cantidad     INT            DEFAULT 1,
+    precio_unit  DECIMAL(12,2)  DEFAULT 0.00,
+    subtotal     DECIMAL(12,2)  DEFAULT 0.00,          -- cantidad × precio_unit
+ 
+    PRIMARY KEY (id),
+    INDEX idx_venta_id (venta_id),
+    CONSTRAINT fk_ventas_items_venta
+        FOREIGN KEY (venta_id) REFERENCES ventas(id)
+        ON DELETE CASCADE                              -- si borras la venta, se borran sus ítems
+        ON UPDATE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+ 
+-- ================================================================
+-- VERIFICACIÓN FINAL
+-- ================================================================
+SELECT 'Base de datos creada correctamente' AS estado;
+SHOW TABLES;

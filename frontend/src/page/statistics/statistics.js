@@ -160,6 +160,9 @@ function renderStats() {
                     </div>
                 `).join("")}
             </div>
+            <div class="closed-table-actions">
+                <button class="btn-reopen-table" data-key="${key}">Devolver</button>
+            </div>
         </div>
     `}).join("");
 
@@ -170,6 +173,16 @@ function renderStats() {
             const hidden = detail.classList.contains("hidden");
             detail.classList.toggle("hidden");
             btn.textContent = hidden ? "Ocultar ▲" : "Ver detalle ▼";
+        });
+    });
+
+    list.querySelectorAll(".btn-reopen-table").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const key = btn.getAttribute("data-key");
+            const label = btn.closest(".closed-table-card")
+                            .querySelector(".closed-table-title").textContent.trim();
+            if (!window.confirm(`¿Devolver "${label}" a mesas activas?`)) return;
+            socket.emit("reopen-table", { closeId: key });
         });
     });
 }
