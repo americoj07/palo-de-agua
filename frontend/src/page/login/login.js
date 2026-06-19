@@ -10,7 +10,7 @@ const USUARIOS = [
 export function updateNav(ruta) {
     const nav    = document.getElementById("main-nav");
     const btn    = document.getElementById("nav-btn");
-    const logged = !!sessionStorage.getItem("rol");
+    const logged = !!localStorage.getItem("rol");
 
     // Ocultar nav solo en /login
     if (ruta === "/login") {
@@ -32,7 +32,7 @@ export function updateNav(ruta) {
         };
     } else {
         // Sin sesión → botón Mesero normal
-        btn.textContent = "Mesero";s
+        btn.textContent = "Mesero";
         btn.classList.remove("logged-in");
         btn.setAttribute("href", "/login");
         btn.setAttribute("data-link", "");
@@ -41,17 +41,16 @@ export function updateNav(ruta) {
 }
 
 function cerrarSesion() {
-    sessionStorage.removeItem("rol");
+    localStorage.removeItem("rol");
     setLoggedIn(false);
-    updateNav("/login");          // oculta el nav
-    window.navigateTo("/login");  // redirige al login
+    updateNav("/login");
+    window.navigateTo("/login");
 }
 
 /* ─────────────────────────────────────────────
    login()  — renderiza el formulario
 ───────────────────────────────────────────── */
 export function login(container) {
-    // Ocultar nav mientras estamos en /login
     updateNav("/login");
 
     container.innerHTML = `
@@ -184,8 +183,7 @@ export function login(container) {
 
             if (encontrado) {
                 setLoggedIn(true);
-                sessionStorage.setItem("rol", encontrado.rol);
-                // Mostrar nav y actualizar botón ANTES de navegar
+                localStorage.setItem("rol", encontrado.rol);
                 updateNav("/tables");
                 window.navigateTo("/tables");
             } else {

@@ -49,21 +49,22 @@ function navigate(route) {
 }
 window.navigateTo = navigate;
 
-// ===== HELPERS DE SESIÓN =====
+// ===== HELPERS DE SESIÓN (localStorage — persiste al cerrar el navegador) =====
 export function isLoggedIn() {
-    return sessionStorage.getItem("auth") === "true";
+    return localStorage.getItem("auth") === "true";
 }
 
 export function setLoggedIn(value) {
     if (value) {
-        sessionStorage.setItem("auth", "true");
+        localStorage.setItem("auth", "true");
     } else {
-        sessionStorage.removeItem("auth");
+        localStorage.removeItem("auth");
+        localStorage.removeItem("rol");
     }
 }
 
 export function getRol() {
-    return sessionStorage.getItem("rol") || "";
+    return localStorage.getItem("rol") || "";
 }
 
 // ===== ROUTER PRINCIPAL =====
@@ -74,9 +75,15 @@ export function router() {
 
     // Ruta raíz → login
     if (path === "/" || path === "") {
-        window.history.replaceState({}, "", "/login");
-        updateNav("/login");
-        login(appContainer);
+        if (isLoggedIn()) {
+            window.history.replaceState({}, "", "/tables");
+            updateNav("/tables");
+            tables(appContainer);
+        } else {
+            window.history.replaceState({}, "", "/login");
+            updateNav("/login");
+            login(appContainer);
+        }
         return;
     }
 
