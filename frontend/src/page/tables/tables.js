@@ -8,9 +8,48 @@ export function tables(container) {
     container.innerHTML = `
     <div class="tables-header">
         <h2>Mesas</h2>
-        <button id="btn-add-table">+ Agregar pedido</button>
+        <div class="tables-header-buttons">
+            <div class="tip-btn-container">
+                <div class="tip-btn-group">
+                    <button id="btn-add-tip">💰 Agregar propina</button>
+                    <button id="btn-tip-history-toggle" title="Ver historial de propinas">▾</button>
+                </div>
+                <div class="tip-history-dropdown hidden" id="tip-history-dropdown">
+                    <div class="tip-history-header">
+                        <span class="tip-history-title">💰 Historial de propinas</span>
+                        <span class="tip-history-total" id="tip-history-total">$0</span>
+                    </div>
+                    <div class="tip-history-list" id="tip-history-list">
+                        <p class="tip-history-empty">Aún no hay propinas registradas</p>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-add-table">+ Agregar pedido</button>
+        </div>
     </div>
     <div class="tables-grid" id="tables-grid"></div>
+
+    <!-- Modal propina -->
+    <div class="tip-modal-overlay hidden" id="tip-modal-overlay">
+        <div class="tip-modal">
+            <div class="tip-modal-header">
+                <h3>💰 Agregar propina</h3>
+                <button class="tip-modal-close" id="btn-close-tip-modal">✕</button>
+            </div>
+            <div class="tip-modal-body">
+                <p class="tip-modal-label">Ingresa el monto de la propina:</p>
+                <input type="number" id="tip-input" placeholder="Ej: 10000" min="1"/>
+                <p class="tip-accumulated">
+                    Propinas acumuladas: <span id="tip-total">$0</span>
+                </p>
+            </div>
+            <div class="tip-modal-footer">
+                <button id="btn-cancel-tip">Cancelar</button>
+                <button id="btn-confirm-tip">✅ Confirmar</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Modal tipo de pedido -->
     <div class="order-modal-overlay hidden" id="order-modal-overlay">
@@ -134,6 +173,146 @@ export function tables(container) {
     document.getElementById("btn-tipo-llevar").addEventListener("click", () => {
         closeOrderModal();
         openLlevarModal();
+    });
+
+    // ===== MODAL PROPINA =====
+    const tipOverlay = document.getElementById("tip-modal-overlay");
+
+    document.getElementById("btn-add-tip").addEventListener("click", () => {
+        document.getElementById("tip-input").value = "";
+        // Mostrar total actual desde el store del servidor
+        const el = document.getElementById("tip-total");
+        if (el) el.textContent = `$${(store.totalTips || 0).toLocaleString()}`;
+        tipOverlay.classList.remove("hidden");
+        setTimeout(() => document.getElementById("tip-input").focus(), 50);
+    });
+
+    const closeTipModal = () => tipOverlay.classList.add("hidden");
+    document.getElementById("btn-close-tip-modal").addEventListener("click", closeTipModal);
+    document.getElementById("btn-cancel-tip").addEventListener("click", closeTipModal);
+    tipOverlay.addEventListener("click", (e) => { if (e.target === tipOverlay) closeTipModal(); });
+
+    document.getElementById("btn-confirm-tip").addEventListener("click", () => {
+        const input  = document.getElementById("tip-input");
+        const amount = parseInt(input.value) || 0;
+        if (amount <= 0) { alert("Por favor ingresa un monto válido"); return; }
+        // ✅ Se envía al servidor → servidor actualiza store.totalTips
+        //    → io.emit("store-update") → TODOS los dispositivos lo reciben
+        socket.emit("add-tip", { amount });
+        closeTipModal();
+    });
+
+    document.getElementById("tip-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("btn-confirm-tip").click();
+    });
+
+    // ===== HISTORIAL DE PROPINAS (panel desplegable) =====
+    const tipHistoryDropdown = document.getElementById("tip-history-dropdown");
+    const tipHistoryToggle   = document.getElementById("btn-tip-history-toggle");
+    const tipBtnGroup        = document.querySelector(".tip-btn-group");
+
+    // Convierte "28/7/2026, 9:50:42 a. m." -> "28/07/2026 9:50am"
+    function formatTipDate(atString) {
+        const m = atString.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(a\.\s*m\.|p\.\s*m\.)/i);
+        if (!m) return atString; // si no matchea el formato esperado, mostramos tal cual
+        const [, d, mo, y, h, min, , ampmRaw] = m;
+        const ampm = /a/i.test(ampmRaw) ? "am" : "pm";
+        const dd = d.padStart(2, "0");
+        const mm = mo.padStart(2, "0");
+        return `${dd}/${mm}/${y} ${h}:${min}${ampm}`;
+    }
+
+    function renderTipHistory() {
+        const total     = store.totalTips   || 0;
+        const historial = store.tipsHistory || [];
+
+        document.getElementById("tip-history-total").textContent = `$${total.toLocaleString("es-CO")}`;
+
+        const listEl = document.getElementById("tip-history-list");
+
+        if (historial.length === 0) {
+            listEl.innerHTML = `<p class="tip-history-empty">Aún no hay propinas registradas</p>`;
+            return;
+        }
+
+        listEl.innerHTML = historial.map((entry, i) => `
+            <div class="tip-history-item">
+                <span class="tip-history-index">${i + 1}</span>
+                <span class="tip-history-amount">$${entry.amount.toLocaleString("es-CO")}</span>
+                <span class="tip-history-datetime">${formatTipDate(entry.at)}</span>
+                <button class="btn-delete-tip" data-id="${entry.id}" title="Eliminar esta propina">🗑️</button>
+            </div>
+        `).join("");
+
+        listEl.querySelectorAll(".btn-delete-tip").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                if (!window.confirm("¿Eliminar esta propina? Se restará del total acumulado.")) return;
+                socket.emit("delete-tip", { id });
+            });
+        });
+    }
+
+    // Posiciona el panel con position:fixed usando las coordenadas reales del botón,
+    // así funciona igual en cualquier tamaño de pantalla sin depender del layout del padre.
+    function positionTipHistoryDropdown() {
+        const margin        = 8;
+        const viewportWidth = window.innerWidth;
+        const width         = Math.min(320, viewportWidth - margin * 2);
+        const groupRect     = tipBtnGroup.getBoundingClientRect();
+
+        let left = groupRect.left;
+        if (left + width > viewportWidth - margin) left = viewportWidth - width - margin;
+        if (left < margin) left = margin;
+
+        tipHistoryDropdown.style.width = `${width}px`;
+        tipHistoryDropdown.style.left  = `${left}px`;
+        tipHistoryDropdown.style.top   = `${groupRect.bottom + margin}px`;
+    }
+
+    tipHistoryToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isHidden = tipHistoryDropdown.classList.contains("hidden");
+        if (isHidden) {
+            renderTipHistory();
+            positionTipHistoryDropdown();
+            tipHistoryDropdown.classList.remove("hidden");
+        } else {
+            tipHistoryDropdown.classList.add("hidden");
+        }
+    });
+
+    // Si cambia el tamaño de la ventana (ej. rotar el celular) mientras está abierto, reposicionamos
+    window.addEventListener("resize", () => {
+        if (!tipHistoryDropdown.classList.contains("hidden")) {
+            positionTipHistoryDropdown();
+        }
+    });
+
+    // Cerrar el panel al hacer clic afuera
+    function handleOutsideClick(e) {
+        if (!document.body.contains(tipHistoryDropdown)) {
+            document.removeEventListener("click", handleOutsideClick);
+            return;
+        }
+        if (!tipHistoryDropdown.classList.contains("hidden") &&
+            !tipHistoryDropdown.contains(e.target) &&
+            e.target !== tipHistoryToggle) {
+            tipHistoryDropdown.classList.add("hidden");
+        }
+    }
+    document.addEventListener("click", handleOutsideClick);
+
+    // Si el panel está abierto y llega una actualización del store (ej. otro dispositivo
+    // agrega una propina), refrescamos la lista en tiempo real
+    const unsubscribeTipHistory = onStoreUpdate(() => {
+        if (!document.getElementById("tip-history-dropdown")) {
+            unsubscribeTipHistory();
+            return;
+        }
+        if (!tipHistoryDropdown.classList.contains("hidden")) {
+            renderTipHistory();
+        }
     });
 }
 

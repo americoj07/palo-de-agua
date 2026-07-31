@@ -3,8 +3,9 @@ import "./ventas.css";
 const API = `http://${window.location.hostname}:3000/api/ventas`;
 
 export function ventas(container) {
-    const hoy    = new Date().toISOString().slice(0, 10);
-    const hace30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    // Usamos hora Bogotá (no UTC) para que el "día" no se adelante después de las 7pm
+    const hoy    = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+    const hace30 = new Date(Date.now() - 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 
     container.innerHTML = `
     <div class="ventas-page">

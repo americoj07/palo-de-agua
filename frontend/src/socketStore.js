@@ -8,6 +8,7 @@ socket.on("store-update", (newStore) => {
     store.tables       = newStore.tables;
     store.closedTables = newStore.closedTables;
     store.totalTips    = newStore.totalTips ?? 0;
+    store.tipsHistory  = newStore.tipsHistory ?? [];
  
     // Notifica a todos los suscriptores activos
     subscribers.forEach(cb => cb());

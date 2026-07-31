@@ -13,7 +13,6 @@
 
 .stats-header-buttons { display: flex; gap: 10px; flex-shrink: 0; }
 
-#btn-add-tip,
 #btn-clear-history {
     background-color: transparent;
     border: 2px solid #e63946;
@@ -25,7 +24,6 @@
     transition: all 0.2s;
     white-space: nowrap;
 }
-#btn-add-tip:hover,
 #btn-clear-history:hover { background-color: #e63946; color: white; }
 
 /* ===== BODY ===== */
@@ -56,95 +54,6 @@
 }
 .summary-card span   { color: #aaaaaa; font-size: 14px; }
 .summary-card strong { color: #e63946; font-size: 28px; }
-
-/* ===== MODAL PROPINA ===== */
-.tip-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-.tip-modal-overlay.hidden { display: none; }
-
-.tip-modal {
-    background-color: #1a1a1a;
-    border: 1px solid #e63946;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    overflow: hidden;
-}
-
-.tip-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 2px solid #e63946;
-}
-.tip-modal-header h3 { color: #ffffff; margin: 0; font-size: 18px; }
-
-.tip-modal-close {
-    background: none;
-    border: 2px solid #e63946;
-    color: #e63946;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.tip-modal-close:hover { background-color: #e63946; color: white; }
-
-.tip-modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.tip-modal-label { color: #aaaaaa; font-size: 14px; margin: 0; }
-
-.tip-modal-body input {
-    padding: 12px 15px;
-    background-color: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-    box-sizing: border-box;
-}
-.tip-modal-body input::-webkit-outer-spin-button,
-.tip-modal-body input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.tip-modal-body input:focus { border-color: #e63946; }
-.tip-modal-body input::placeholder { color: #666; }
-
-.tip-accumulated { color: #aaaaaa; font-size: 13px; margin: 0; }
-.tip-accumulated span { color: #e63946; font-weight: bold; }
-
-.tip-modal-footer {
-    display: flex;
-    gap: 10px;
-    padding: 15px 20px;
-    border-top: 1px solid #333;
-}
-.tip-modal-footer button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-#btn-cancel-tip { background: transparent; border: 1px solid #444; color: #aaaaaa; }
-#btn-cancel-tip:hover { border-color: #e63946; color: #e63946; }
-#btn-confirm-tip { background-color: #e63946; border: none; color: white; font-weight: bold; }
-#btn-confirm-tip:hover { background-color: #c1121f; }
 
 /* ===== HISTORIAL ===== */
 .stats-closed h3 { color: #ffffff; margin: 0 0 15px 0; font-size: 18px; }

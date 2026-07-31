@@ -44,8 +44,10 @@ async function guardarVenta(tablaCerrada) {
     try {
         await conn.beginTransaction();
 
-        // fecha_cierre en formato YYYY-MM-DD para poder filtrar correctamente
-        const fechaCierre = new Date().toISOString().slice(0, 10);
+        // fecha_cierre en formato YYYY-MM-DD (hora Bogotá, NO UTC).
+        // toISOString() convierte a UTC y desfasa el día después de las 7pm hora Colombia.
+        // "en-CA" da formato YYYY-MM-DD directamente.
+        const fechaCierre = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 
         const [result] = await conn.execute(
             `INSERT INTO ventas

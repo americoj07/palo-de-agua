@@ -41,6 +41,7 @@ function loadStore() {
             console.log("   \u2514\u2500 Mesas abiertas  :", data.tables?.length ?? 0);
             console.log("   \u2514\u2500 Mesas cerradas  :", data.closedTables?.length ?? 0);
             console.log("   \u2514\u2500 Propinas        : $" + (data.totalTips ?? 0).toLocaleString());
+            console.log("   \u2514\u2500 Registros prop. :", data.tipsHistory?.length ?? 0);
             return data;
         }
     } catch (e) {
@@ -69,7 +70,18 @@ app.use(express.json());
 
 // ✅ Carga el estado guardado o empieza desde cero
 const savedStore = loadStore();
-const store = savedStore ?? { tables: [], closedTables: [], totalTips: 0 };
+const store = savedStore ?? { tables: [], closedTables: [], totalTips: 0, tipsHistory: [] };
+// Compatibilidad: si el store venía de una versión anterior sin historial de propinas
+store.tipsHistory = store.tipsHistory || [];
+// Compatibilidad: propinas guardadas antes de tener id, les asignamos uno para poder borrarlas
+let tipsBackfilled = false;
+store.tipsHistory.forEach(t => {
+    if (!t.id) {
+        t.id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        tipsBackfilled = true;
+    }
+});
+if (tipsBackfilled) saveStore();
 
 // ===== COMANDOS ESC/POS MANUALES =====
 const ESC = 0x1B;
@@ -960,6 +972,24 @@ io.on("connection", (socket) => {
     // ===== AGREGAR PROPINA =====
     socket.on("add-tip", ({ amount }) => {
         store.totalTips = (store.totalTips || 0) + amount;
+        store.tipsHistory = store.tipsHistory || [];
+        store.tipsHistory.push({
+            id:     `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            amount,
+            at: new Date().toLocaleString("es-CO")
+        });
+        saveStore();
+        io.emit("store-update", store);
+    });
+
+    // ===== ELIMINAR PROPINA (si el mesero se equivocó al ingresarla) =====
+    socket.on("delete-tip", ({ id }) => {
+        store.tipsHistory = store.tipsHistory || [];
+        const entry = store.tipsHistory.find(t => t.id === id);
+        if (!entry) return; // ya fue eliminada o no existe
+
+        store.tipsHistory = store.tipsHistory.filter(t => t.id !== id);
+        store.totalTips = Math.max(0, (store.totalTips || 0) - entry.amount);
         saveStore();
         io.emit("store-update", store);
     });
@@ -968,6 +998,7 @@ io.on("connection", (socket) => {
     socket.on("clear-history", () => {
         store.closedTables = [];
         store.totalTips    = 0;
+        store.tipsHistory  = [];
         saveStore();
         io.emit("store-update", store);
     });

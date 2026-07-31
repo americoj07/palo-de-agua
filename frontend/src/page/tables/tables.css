@@ -13,6 +13,46 @@
     margin: 0;
 }
 
+.tables-header-buttons {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.tip-btn-container {
+    position: relative;
+}
+
+.tip-btn-group {
+    display: flex;
+}
+
+#btn-add-tip {
+    background-color: transparent;
+    border: 2px solid #e63946;
+    border-right: none;
+    color: #e63946;
+    padding: 10px 20px;
+    border-radius: 8px 0 0 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+#btn-add-tip:hover { background-color: #e63946; color: white; }
+
+#btn-tip-history-toggle {
+    background-color: transparent;
+    border: 2px solid #e63946;
+    color: #e63946;
+    padding: 10px 12px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+#btn-tip-history-toggle:hover { background-color: #e63946; color: white; }
+
 #btn-add-table {
     background-color: #e63946;
     color: white;
@@ -214,15 +254,44 @@
     /* Título oculto en móvil para dar más espacio */
     .tables-header h2 { display: none; }
 
-    /* Botón agregar pedido centrado y grande */
-    #btn-add-table {
+    /* Contenedor de botones apilados y a ancho completo */
+    .tables-header-buttons {
+        flex-direction: column;
         width: calc(100% - 32px);
         margin: 16px;
+        gap: 10px;
+    }
+
+    /* Botones grandes y centrados en móvil */
+    #btn-add-table {
+        width: 100%;
+        margin: 0;
         padding: 18px;
         font-size: 18px;
         font-weight: 700;
         border-radius: 14px;
         letter-spacing: 0.5px;
+        box-sizing: border-box;
+    }
+
+    .tip-btn-container { width: 100%; }
+    .tip-btn-group { width: 100%; }
+
+    #btn-add-tip {
+        flex: 1;
+        margin: 0;
+        padding: 18px;
+        font-size: 18px;
+        font-weight: 700;
+        border-radius: 14px 0 0 14px;
+        letter-spacing: 0.5px;
+        box-sizing: border-box;
+    }
+    #btn-tip-history-toggle {
+        padding: 18px 16px;
+        font-size: 16px;
+        border-radius: 0 14px 14px 0;
+        box-sizing: border-box;
     }
 
     /* Grid en columna única */
@@ -302,4 +371,206 @@
 }
 .table-card:hover .btn-rename-table:hover {
     background: rgba(255,255,255,0.2);
+}
+
+/* ===== MODAL PROPINA ===== */
+.tip-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.tip-modal-overlay.hidden { display: none; }
+
+.tip-modal {
+    background-color: #1a1a1a;
+    border: 1px solid #e63946;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+}
+
+.tip-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #e63946;
+}
+.tip-modal-header h3 { color: #ffffff; margin: 0; font-size: 18px; }
+
+.tip-modal-close {
+    background: none;
+    border: 2px solid #e63946;
+    color: #e63946;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tip-modal-close:hover { background-color: #e63946; color: white; }
+
+.tip-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.tip-modal-label { color: #aaaaaa; font-size: 14px; margin: 0; }
+
+.tip-modal-body input {
+    padding: 12px 15px;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.tip-modal-body input::-webkit-outer-spin-button,
+.tip-modal-body input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tip-modal-body input:focus { border-color: #e63946; }
+.tip-modal-body input::placeholder { color: #666; }
+
+.tip-accumulated { color: #aaaaaa; font-size: 13px; margin: 0; }
+.tip-accumulated span { color: #e63946; font-weight: bold; }
+
+.tip-modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #333;
+}
+.tip-modal-footer button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+#btn-cancel-tip { background: transparent; border: 1px solid #444; color: #aaaaaa; }
+#btn-cancel-tip:hover { border-color: #e63946; color: #e63946; }
+#btn-confirm-tip { background-color: #e63946; border: none; color: white; font-weight: bold; }
+#btn-confirm-tip:hover { background-color: #c1121f; }
+
+/* ===== PANEL DESPLEGABLE — HISTORIAL DE PROPINAS =====
+   position:fixed porque el top/left/width se calculan dinámicamente por JS
+   (positionTipHistoryDropdown en tables.js), así queda bien ubicado sin
+   importar el tamaño de pantalla ni el layout del contenedor padre. */
+.tip-history-dropdown {
+    position: fixed;
+    background-color: #1a1a1a;
+    border: 1px solid #e63946;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 2500;
+    overflow: hidden;
+}
+.tip-history-dropdown.hidden { display: none; }
+
+.tip-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background-color: #202020;
+    border-bottom: 2px solid #e63946;
+}
+.tip-history-title {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.tip-history-total {
+    color: #e63946;
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.tip-history-list {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tip-history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+}
+.tip-history-index {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: #e63946;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+}
+.tip-history-amount {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 14px;
+}
+.tip-history-datetime {
+    color: #aaaaaa;
+    font-size: 12px;
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.btn-delete-tip {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+.btn-delete-tip:hover {
+    opacity: 1;
+    background-color: rgba(230, 57, 70, 0.2);
+}
+
+.tip-history-empty {
+    color: #777;
+    text-align: center;
+    font-size: 13px;
+    padding: 24px 10px;
+    margin: 0;
+}
+
+/* ===== MÓVIL — panel de historial de propinas ===== */
+@media (max-width: 480px) {
+    .tip-history-item { gap: 6px; padding: 10px; }
+    .tip-history-index { width: 18px; height: 18px; font-size: 10px; flex-shrink: 0; }
+    .tip-history-amount { font-size: 13px; flex-shrink: 0; }
+    .tip-history-datetime { font-size: 11px; }
+    .btn-delete-tip { padding: 4px; font-size: 13px; }
 }

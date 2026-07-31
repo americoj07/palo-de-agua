@@ -10,7 +10,6 @@ export function statistics(container) {
     <div class="stats-header">
         <h2>📊 Estadísticas del día</h2>
         <div class="stats-header-buttons">
-            <button id="btn-add-tip">💰 Agregar propina</button>
             <button id="btn-clear-history">🗑️ Limpiar historial</button>
         </div>
     </div>
@@ -40,27 +39,6 @@ export function statistics(container) {
             <div id="closed-tables-list"></div>
         </div>
     </div>
-
-    <!-- Modal propina -->
-    <div class="tip-modal-overlay hidden" id="tip-modal-overlay">
-        <div class="tip-modal">
-            <div class="tip-modal-header">
-                <h3>💰 Agregar propina</h3>
-                <button class="tip-modal-close" id="btn-close-tip-modal">✕</button>
-            </div>
-            <div class="tip-modal-body">
-                <p class="tip-modal-label">Ingresa el monto de la propina:</p>
-                <input type="number" id="tip-input" placeholder="Ej: 10000" min="1"/>
-                <p class="tip-accumulated">
-                    Propinas acumuladas: <span id="tip-total">$0</span>
-                </p>
-            </div>
-            <div class="tip-modal-footer">
-                <button id="btn-cancel-tip">Cancelar</button>
-                <button id="btn-confirm-tip">✅ Confirmar</button>
-            </div>
-        </div>
-    </div>
     `;
 
     renderStats();
@@ -71,37 +49,6 @@ export function statistics(container) {
         } else {
             unsubscribe();
         }
-    });
-
-    // ===== MODAL PROPINA =====
-    const overlay = document.getElementById("tip-modal-overlay");
-
-    document.getElementById("btn-add-tip").addEventListener("click", () => {
-        document.getElementById("tip-input").value = "";
-        // Mostrar total actual desde el store del servidor
-        const el = document.getElementById("tip-total");
-        if (el) el.textContent = `$${(store.totalTips || 0).toLocaleString()}`;
-        overlay.classList.remove("hidden");
-        setTimeout(() => document.getElementById("tip-input").focus(), 50);
-    });
-
-    const closeTipModal = () => overlay.classList.add("hidden");
-    document.getElementById("btn-close-tip-modal").addEventListener("click", closeTipModal);
-    document.getElementById("btn-cancel-tip").addEventListener("click", closeTipModal);
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeTipModal(); });
-
-    document.getElementById("btn-confirm-tip").addEventListener("click", () => {
-        const input  = document.getElementById("tip-input");
-        const amount = parseInt(input.value) || 0;
-        if (amount <= 0) { alert("Por favor ingresa un monto válido"); return; }
-        // ✅ Se envía al servidor → servidor actualiza store.totalTips
-        //    → io.emit("store-update") → TODOS los dispositivos lo reciben
-        socket.emit("add-tip", { amount });
-        closeTipModal();
-    });
-
-    document.getElementById("tip-input").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") document.getElementById("btn-confirm-tip").click();
     });
 
     document.getElementById("btn-clear-history").addEventListener("click", () => {
@@ -125,7 +72,6 @@ function renderStats() {
     set("stat-service",  fmt(totalService + tips));   // servicio + propinas
     set("stat-subtotal", fmt(totalSubtotal));
     set("stat-tips",     fmt(tips));
-    set("tip-total",     fmt(tips));                  // actualiza dentro del modal también
 
     const list = document.getElementById("closed-tables-list");
     if (!list) return;
