@@ -4,6 +4,10 @@ import { onStoreUpdate } from "../../socketStore.js";
 import "./tables.css";
 import { openTableDetail } from "./tableDetail.js";
 
+// ===== SELECCIÓN MÚLTIPLE (pedido combinado) =====
+let selectionMode = false;
+const selectedIds = new Set();
+
 export function tables(container) {
     container.innerHTML = `
     <div class="tables-header">
@@ -11,8 +15,15 @@ export function tables(container) {
         <div class="tables-header-buttons">
             <div class="tip-btn-container">
                 <div class="tip-btn-group">
-                    <button id="btn-add-tip">💰 Agregar propina</button>
-                    <button id="btn-tip-history-toggle" title="Ver historial de propinas">▾</button>
+                    <button id="btn-add-tip" data-label="Propina"><span class="tip-emoji">💰</span> <span class="tip-text">Agregar propina</span></button>
+                    <button id="btn-tip-history-toggle" title="Ver historial de propinas" aria-label="Ver historial de propinas" data-label="Historial">
+                        <span class="tip-caret">▾</span>
+                        <svg class="tip-history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 12a9 9 0 1 0 3-6.7"/>
+                            <path d="M3 4v5h5"/>
+                            <path d="M12 7.5V12l3 2"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="tip-history-dropdown hidden" id="tip-history-dropdown">
                     <div class="tip-history-header">
@@ -24,10 +35,47 @@ export function tables(container) {
                     </div>
                 </div>
             </div>
+            <div class="combine-btn-group">
+            <button id="btn-combine-mode" title="Combinar mesas en un solo pedido" aria-label="Combinar mesas" aria-pressed="false" data-label="Combinar">
+                <svg class="fusion-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="26" aria-hidden="true">
+                    <defs>
+                        <clipPath id="fusion-clip-a"><circle cx="188" cy="256" r="150"/></clipPath>
+                        <clipPath id="fusion-clip-b"><circle cx="328" cy="256" r="150"/></clipPath>
+                    </defs>
+                    <g clip-path="url(#fusion-clip-a)"><g clip-path="url(#fusion-clip-b)">
+                        <g class="fusion-hatch" stroke-width="22">
+                    <line x1="280" y1="0" x2="-232" y2="512"/>
+                    <line x1="350" y1="0" x2="-162" y2="512"/>
+                    <line x1="420" y1="0" x2="-92" y2="512"/>
+                    <line x1="490" y1="0" x2="-22" y2="512"/>
+                    <line x1="560" y1="0" x2="48" y2="512"/>
+                    <line x1="630" y1="0" x2="118" y2="512"/>
+                    <line x1="700" y1="0" x2="188" y2="512"/>
+                    <line x1="770" y1="0" x2="258" y2="512"/>
+                        </g>
+                    </g></g>
+                    <circle class="fusion-c-left"  cx="188" cy="256" r="150"/>
+                    <circle class="fusion-c-right" cx="328" cy="256" r="150"/>
+                </svg>
+            </button>
+            <button id="btn-combine-reprint" title="Reimprimir el último pedido combinado" aria-label="Reimprimir el último pedido combinado" data-label="Reimprimir">
+                <svg class="reprint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 4v15"/>
+                    <path d="M6 13l6 6 6-6"/>
+                </svg>
+            </button>
+            </div>
             <button id="btn-add-table">+ Agregar pedido</button>
         </div>
     </div>
     <div class="tables-grid" id="tables-grid"></div>
+
+    <!-- Barra de selección múltiple -->
+    <div class="combine-bar hidden" id="combine-bar">
+        <span id="combine-count">0 mesas</span>
+        <button id="btn-combine-cancel">Cancelar</button>
+        <button id="btn-combine-print">🖨️ Imprimir</button>
+    </div>
 
     <!-- Modal propina -->
     <div class="tip-modal-overlay hidden" id="tip-modal-overlay">
@@ -92,7 +140,17 @@ export function tables(container) {
     </div>
     `;
 
+    selectionMode = false;
+    selectedIds.clear();
     renderTables();
+
+    socket.off("name-error");
+    socket.on("name-error", (msg) => alert(`⚠️ ${msg}`));
+
+    document.getElementById("btn-combine-mode").addEventListener("click", () => setSelectionMode(!selectionMode));
+    document.getElementById("btn-combine-cancel").addEventListener("click", () => setSelectionMode(false));
+    document.getElementById("btn-combine-print").addEventListener("click", printCombined);
+    document.getElementById("btn-combine-reprint").addEventListener("click", reprintCombined);
 
     const unsubscribe = onStoreUpdate(() => {
         if (document.getElementById("tables-grid")) {
@@ -259,7 +317,9 @@ export function tables(container) {
         const margin        = 8;
         const viewportWidth = window.innerWidth;
         const width         = Math.min(320, viewportWidth - margin * 2);
-        const groupRect     = tipBtnGroup.getBoundingClientRect();
+        // En móvil el grupo usa display:contents (no tiene caja), así que se ancla al botón de historial
+        const anchorEl      = getComputedStyle(tipBtnGroup).display === "contents" ? tipHistoryToggle : tipBtnGroup;
+        const groupRect     = anchorEl.getBoundingClientRect();
 
         let left = groupRect.left;
         if (left + width > viewportWidth - margin) left = viewportWidth - width - margin;
@@ -316,6 +376,25 @@ export function tables(container) {
     });
 }
 
+// ===== NOMBRES ÚNICOS PARA PEDIDOS "PARA LLEVAR" =====
+// Sin tildes, sin espacios dobles, en mayúsculas (JUAN = Juán = " juan ")
+function normalizarNombre(txt) {
+    return String(txt || "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+}
+
+// Solo aplica a nombres escritos: el "Para llevar" por defecto (sin nombre) puede repetirse
+function nombreEnUso(name) {
+    const n = normalizarNombre(name);
+    if (!n) return false;
+    return store.tables.some(t =>
+        t.status === "open" && t.type === "llevar" && normalizarNombre(t.clientName) === n
+    );
+}
+
 // ===== MODAL NOMBRE PARA LLEVAR =====
 function openLlevarModal() {
     const existing = document.getElementById("llevar-modal-overlay");
@@ -334,10 +413,12 @@ function openLlevarModal() {
                 <input
                     type="text"
                     id="llevar-name-input"
+                    style="text-transform:uppercase"
                     placeholder="Ej: Juan, Mesa 3, Delivery..."
                     maxlength="30"
                     autocomplete="off"
                 />
+                <p class="llevar-name-error hidden" id="llevar-name-error"></p>
             </div>
             <div class="order-modal-footer">
                 <button id="btn-cancel-llevar">Cancelar</button>
@@ -356,8 +437,27 @@ function openLlevarModal() {
     const input = document.getElementById("llevar-name-input");
     setTimeout(() => input.focus(), 50);
 
+    const errorEl = document.getElementById("llevar-name-error");
+    input.addEventListener("input", () => {
+        errorEl.classList.add("hidden");
+        input.classList.remove("input-error");
+    });
+
     const confirm = () => {
-        const name     = input.value.trim();
+        const name     = input.value.trim().toUpperCase();
+
+        // Nombre repetido: no se crea, se avisa en el mismo modal
+        if (nombreEnUso(name)) {
+            errorEl.textContent = `Ya hay un pedido abierto con el nombre "${name}". Usa otro nombre.`;
+            errorEl.classList.remove("hidden");
+            input.classList.remove("input-error");
+            void input.offsetWidth; // reinicia la animación
+            input.classList.add("input-error");
+            input.focus();
+            input.select();
+            return;
+        }
+
         const llevarId = Date.now();
         socket.emit("add-table", {
             id:          llevarId,
@@ -371,11 +471,76 @@ function openLlevarModal() {
             barDone:     false
         });
         closeModal();
-        setTimeout(() => openTableDetail(llevarId), 120);
+        // Solo abrir el detalle si el servidor realmente creó el pedido
+        setTimeout(() => {
+            if (store.tables.some(t => t.id === llevarId)) openTableDetail(llevarId);
+        }, 250);
     };
 
     document.getElementById("btn-confirm-llevar").addEventListener("click", confirm);
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirm(); });
+}
+
+// ===== PEDIDO COMBINADO =====
+function setSelectionMode(on) {
+    selectionMode = on;
+    if (!on) selectedIds.clear();
+    const modeBtn = document.getElementById("btn-combine-mode");
+    modeBtn?.classList.toggle("active", on);
+    modeBtn?.setAttribute("aria-pressed", String(on));
+    document.getElementById("tables-grid")?.classList.toggle("selecting", on);
+    renderTables();
+    updateCombineBar();
+}
+
+function updateCombineBar() {
+    const bar = document.getElementById("combine-bar");
+    if (!bar) return;
+    bar.classList.toggle("hidden", !selectionMode);
+    const n = selectedIds.size;
+    document.getElementById("tables-grid")?.classList.toggle("has-selection", n > 0);
+    const count = document.getElementById("combine-count");
+    const texto = `${n} ${n === 1 ? "mesa" : "mesas"}`;
+    if (count.textContent !== texto) {
+        count.textContent = texto;
+        count.classList.remove("bump");
+        void count.offsetWidth; // reinicia la animación
+        count.classList.add("bump");
+    }
+    document.getElementById("btn-combine-print").disabled = n < 2;
+}
+
+function printCombined() {
+    if (selectedIds.size < 2) return;
+    socket.emit("print-combined-order", { tableIds: [...selectedIds] });
+    const onSuccess = () => { socket.off("print-error", onError); alert("✅ Pedido combinado enviado"); setSelectionMode(false); };
+    const onError   = (msg) => { socket.off("print-success", onSuccess); alert(`⚠️ Error: ${msg}`); };
+    socket.once("print-success", onSuccess);
+    socket.once("print-error", onError);
+}
+
+function reprintCombined() {
+    const btn = document.getElementById("btn-combine-reprint");
+    if (!btn || btn.disabled) return;
+    if (!confirm("¿Reimprimir el último pedido combinado?")) return;
+
+    btn.disabled = true;
+    btn.classList.add("busy");
+
+    let timer;
+    const finish = () => { clearTimeout(timer); btn.disabled = false; btn.classList.remove("busy"); };
+    const onSuccess = () => { socket.off("print-error", onError); finish(); alert("✅ Pedido combinado reimpreso"); };
+    const onError   = (msg) => { socket.off("print-success", onSuccess); finish(); alert(`⚠️ Error: ${msg}`); };
+    // Por si la impresora no responde: no dejar el botón bloqueado para siempre
+    timer = setTimeout(() => {
+        socket.off("print-success", onSuccess);
+        socket.off("print-error", onError);
+        finish();
+    }, 20000);
+
+    socket.once("print-success", onSuccess);
+    socket.once("print-error", onError);
+    socket.emit("reprint-combined-order");
 }
 
 export function renderTables() {
@@ -383,6 +548,10 @@ export function renderTables() {
     if (!grid) return;
 
     const openTables = store.tables.filter(t => t.status === "open");
+
+    // Descartar de la selección mesas que ya no existen
+    [...selectedIds].forEach(id => { if (!openTables.some(t => t.id === id)) selectedIds.delete(id); });
+    updateCombineBar();
 
     if (openTables.length === 0) {
         grid.innerHTML = `
@@ -396,14 +565,14 @@ export function renderTables() {
     }
 
     grid.innerHTML = openTables.map(table =>
-        `<div class="table-card ${table.type === 'llevar' ? 'table-card-llevar' : ''}" data-id="${table.id}">
+        `<div class="table-card ${table.type === 'llevar' ? 'table-card-llevar' : ''} ${selectedIds.has(table.id) ? 'selected' : ''}" data-id="${table.id}">
             ${table.type !== 'llevar' ? `
             <button class="btn-rename-table" data-id="${table.id}" title="Cambiar número de mesa">✏️</button>
             ` : ''}
             <strong>${table.type === 'llevar' ? '🥡' : table.id}</strong>
             <div class="table-card-info">
                 <span>${table.type === 'llevar'
-                    ? (table.clientName ? `🥡 ${table.clientName}` : 'Para llevar')
+                    ? (table.clientName ? `🥡 ${String(table.clientName).toUpperCase()}` : 'Para llevar')
                     : 'Mesa'}</span>
                 <span class="table-card-time">${table.createdAt}</span>
             </div>
@@ -415,6 +584,15 @@ export function renderTables() {
             // No abrir detalle si se clickeó el botón de renombrar
             if (e.target.closest(".btn-rename-table")) return;
             const tableId = parseInt(card.getAttribute("data-id"));
+            if (selectionMode) {
+                selectedIds.has(tableId) ? selectedIds.delete(tableId) : selectedIds.add(tableId);
+                card.classList.toggle("selected");
+                card.classList.remove("pop");
+                void card.offsetWidth;
+                if (selectedIds.has(tableId)) card.classList.add("pop");
+                updateCombineBar();
+                return;
+            }
             openTableDetail(tableId);
         });
     });

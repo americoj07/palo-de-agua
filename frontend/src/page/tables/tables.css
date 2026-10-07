@@ -574,3 +574,471 @@
     .tip-history-datetime { font-size: 11px; }
     .btn-delete-tip { padding: 4px; font-size: 13px; }
 }
+
+/* ================================================================
+   PEDIDO COMBINADO — selección múltiple de mesas
+   ================================================================ */
+
+/* ===== BOTÓN COMBINAR (solo icono) ===== */
+#btn-combine-mode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    padding: 0;
+    background-color: transparent;
+    border: 2px solid #e63946;
+    color: #e63946;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+#btn-combine-mode .fusion-icon {
+    width: 26px;
+    height: 26px;
+    overflow: visible;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#btn-combine-mode:hover {
+    background-color: rgba(230, 57, 70, 0.15);
+    transform: translateY(-2px);
+}
+#btn-combine-mode:hover .fusion-icon { transform: scale(1.15) rotate(-6deg); }
+#btn-combine-mode:active { transform: translateY(0) scale(0.94); }
+
+/* Las rayas del centro "corren" al pasar el mouse y mientras el modo está activo */
+.fusion-hatch { transform: translate(0, 0); }
+#btn-combine-mode:hover .fusion-hatch  { animation: fusion-march 1.4s linear infinite; }
+#btn-combine-mode.active .fusion-hatch { animation: fusion-march 0.9s linear infinite; }
+@keyframes fusion-march {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(35px, 35px); }
+}
+
+/* Modo activo: relleno rojo + pulso */
+#btn-combine-mode.active {
+    background-color: #e63946;
+    color: #ffffff;
+    animation: combine-ring 1.6s ease-out infinite;
+}
+#btn-combine-mode.active:hover { background-color: #c1121f; }
+#btn-combine-mode.active .fusion-icon { transform: scale(1.08); }
+@keyframes combine-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.55); }
+    100% { box-shadow: 0 0 0 12px rgba(230, 57, 70, 0); }
+}
+
+/* ===== TARJETAS EN MODO SELECCIÓN ===== */
+.tables-grid.selecting { padding-bottom: 120px; }
+
+/* En modo selección el hover ya no pinta la tarjeta de color
+   (para que el color solo signifique "seleccionada") */
+.tables-grid.selecting .table-card:hover {
+    background-color: #2a2a2a;
+    border-color: #ff7b85;
+    transform: scale(1.03);
+}
+.tables-grid.selecting .table-card-llevar:hover { border-color: #66e29a; }
+
+/* Cuando ya hay alguna elegida, las demás se apagan un poco */
+.tables-grid.has-selection .table-card:not(.selected) { opacity: 0.5; }
+.tables-grid.has-selection .table-card:not(.selected):hover { opacity: 0.9; }
+
+/* Tarjeta seleccionada: relleno de su color + check blanco */
+.tables-grid .table-card.selected {
+    background-color: #e63946;
+    border-color: #ffb3b9;
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.35), 0 10px 26px rgba(230, 57, 70, 0.4);
+    transform: scale(1.04);
+}
+/* La animación solo corre al tocar (clase .pop), no en cada refresco del store */
+.tables-grid .table-card.selected.pop { animation: card-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.tables-grid .table-card-llevar.selected {
+    background-color: #2ecc71;
+    border-color: #b8f2d0;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.35), 0 10px 26px rgba(46, 204, 113, 0.4);
+}
+.tables-grid.selecting .table-card.selected:hover       { background-color: #e63946; border-color: #ffb3b9; }
+.tables-grid.selecting .table-card-llevar.selected:hover { background-color: #2ecc71; border-color: #b8f2d0; }
+
+.table-card.selected span,
+.table-card.selected strong { color: #ffffff; }
+
+.table-card.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: #e63946;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.table-card.selected.pop::after { animation: check-pop 0.35s 0.05s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.table-card-llevar.selected::after { color: #1e9e55; }
+
+@keyframes card-pop {
+    0%   { transform: scale(0.94); }
+    60%  { transform: scale(1.09); }
+    100% { transform: scale(1.04); }
+}
+@keyframes check-pop {
+    from { transform: scale(0) rotate(-90deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0);      opacity: 1; }
+}
+
+/* ===== BARRA INFERIOR ===== */
+.combine-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 10px 18px;
+    border-radius: 14px;
+    background-color: #1a1a1a;
+    border: 2px solid #e63946;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 50;
+}
+.combine-bar.hidden { display: none; }
+.combine-bar:not(.hidden) { animation: bar-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes bar-in {
+    from { opacity: 0; transform: translate(-50%, 30px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+#combine-count {
+    display: inline-block;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-right: 6px;
+}
+#combine-count.bump { animation: count-bump 0.25s ease-out; }
+@keyframes count-bump {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); color: #ff7b85; }
+    100% { transform: scale(1); }
+}
+
+#btn-combine-cancel,
+#btn-combine-print {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+#btn-combine-cancel { background: transparent; border: 1px solid #444; color: #aaaaaa; }
+#btn-combine-cancel:hover { border-color: #e63946; color: #e63946; }
+#btn-combine-print { background-color: #e63946; border: none; color: #ffffff; font-weight: bold; }
+#btn-combine-print:hover:not(:disabled) { background-color: #c1121f; transform: translateY(-1px); }
+#btn-combine-print:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== MÓVIL ===== */
+@media (max-width: 480px) {
+    #btn-combine-mode {
+        width: 100%;
+        height: 56px;
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+    #btn-combine-mode .fusion-icon { width: 30px; height: 30px; }
+
+    /* badge a la derecha para no tapar el número en tarjetas horizontales */
+    .table-card.selected::after {
+        top: 50%;
+        left: auto;
+        right: 44px;
+        margin-top: -12px;
+    }
+
+    .combine-bar {
+        width: calc(100% - 32px);
+        box-sizing: border-box;
+        bottom: 12px;
+        padding: 10px;
+    }
+    #combine-count { flex: 1; margin-right: 0; }
+}
+
+/* Respeta a quien desactiva las animaciones en su dispositivo */
+@media (prefers-reduced-motion: reduce) {
+    #btn-combine-mode, #btn-combine-mode * ,
+    .table-card.selected, .table-card.selected::after,
+    .combine-bar, #combine-count { animation: none !important; transition: none !important; }
+}
+
+/* ===== NOMBRE REPETIDO (modal para llevar) ===== */
+.llevar-name-error {
+    color: #ff7b85;
+    font-size: 13px;
+    margin: 10px 2px 0;
+    line-height: 1.4;
+}
+.llevar-name-error.hidden { display: none; }
+#llevar-name-input.input-error {
+    border-color: #e63946;
+    animation: input-shake 0.35s ease-in-out;
+}
+@keyframes input-shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+}
+
+/* ================================================================
+   GRUPO: [combinar] [↓ reimprimir último pedido combinado]
+   ================================================================ */
+.combine-btn-group { display: flex; }
+
+.combine-btn-group #btn-combine-mode {
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+}
+/* dentro del grupo no se "levanta" para que los dos botones sigan alineados */
+.combine-btn-group #btn-combine-mode:hover,
+.combine-btn-group #btn-combine-mode:active { transform: none; }
+
+#btn-combine-reprint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+    background-color: transparent;
+    border: 2px solid #e63946;
+    color: #e63946;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+#btn-combine-reprint .reprint-icon { width: 20px; height: 20px; }
+#btn-combine-reprint:hover:not(:disabled) { background-color: #e63946; color: #ffffff; }
+#btn-combine-reprint:hover:not(:disabled) .reprint-icon { animation: arrow-bounce 0.8s ease-in-out infinite; }
+#btn-combine-reprint:active:not(:disabled) { background-color: #c1121f; }
+
+@keyframes arrow-bounce {
+    0%, 100% { transform: translateY(-2px); }
+    50%      { transform: translateY(3px); }
+}
+
+/* Mientras manda a imprimir: la flecha "cae" en bucle */
+#btn-combine-reprint.busy { cursor: wait; background-color: rgba(230, 57, 70, 0.15); }
+#btn-combine-reprint.busy .reprint-icon { animation: arrow-drop 0.9s ease-in infinite; }
+@keyframes arrow-drop {
+    0%   { transform: translateY(-9px); opacity: 0; }
+    40%  { opacity: 1; }
+    100% { transform: translateY(9px);  opacity: 0; }
+}
+
+@media (max-width: 480px) {
+    .combine-btn-group { width: 100%; }
+    .combine-btn-group #btn-combine-mode {
+        flex: 1;
+        width: auto;
+        border-radius: 14px 0 0 14px;
+    }
+    #btn-combine-reprint {
+        width: 68px;
+        height: 56px;
+        border-radius: 0 14px 14px 0;
+    }
+    #btn-combine-reprint .reprint-icon { width: 24px; height: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #btn-combine-reprint .reprint-icon { animation: none !important; }
+}
+
+/* ================================================================
+   BARRA DE 4 BOTONES (PC y celular)
+   [Combinar] [Reimprimir] [Propina] [Historial]   + "Agregar pedido"
+   ================================================================ */
+
+/* los grupos dejan de tener caja: sus botones pasan a ser celdas del grid */
+.tip-btn-container,
+.tip-btn-group,
+.combine-btn-group { display: contents; }
+
+.tables-header-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 0;
+    row-gap: 12px;
+    align-items: stretch;
+}
+
+/* ----- celdas ----- */
+.tables-header-buttons #btn-combine-mode,
+.tables-header-buttons #btn-combine-reprint,
+.tables-header-buttons #btn-add-tip,
+.tables-header-buttons #btn-tip-history-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    height: 74px;
+    margin: 0;
+    padding: 6px 2px;
+    box-sizing: border-box;
+    background-color: transparent;
+    color: #e63946;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 2px solid #e63946;
+    border-left-width: 0;
+    border-radius: 0;
+    transform: none;
+    animation: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* etiqueta pequeña debajo de cada icono */
+.tables-header-buttons #btn-combine-mode::after,
+.tables-header-buttons #btn-combine-reprint::after,
+.tables-header-buttons #btn-add-tip::after,
+.tables-header-buttons #btn-tip-history-toggle::after {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1;
+}
+
+/* bordes redondeados solo en los extremos de la barra + orden */
+.tables-header-buttons #btn-combine-mode {
+    order: 1;
+    border-left-width: 2px;
+    border-radius: 14px 0 0 14px;
+}
+.tables-header-buttons #btn-combine-reprint     { order: 2; }
+.tables-header-buttons #btn-add-tip             { order: 3; }
+.tables-header-buttons #btn-tip-history-toggle  { order: 4; border-radius: 0 14px 14px 0; }
+.tables-header-buttons #btn-add-table           { order: 5; }
+
+/* ----- iconos ----- */
+.tables-header-buttons #btn-combine-mode .fusion-icon,
+.tables-header-buttons #btn-combine-reprint .reprint-icon,
+.tables-header-buttons #btn-tip-history-toggle .tip-history-icon {
+    display: block;
+    width: 26px;
+    height: 26px;
+}
+.tables-header-buttons #btn-add-tip .tip-emoji { font-size: 24px; line-height: 1; }
+.tables-header-buttons #btn-add-tip .tip-text  { display: none; }
+.tables-header-buttons #btn-tip-history-toggle .tip-caret { display: none; }
+
+/* ----- estados ----- */
+.tables-header-buttons #btn-combine-mode:hover,
+.tables-header-buttons #btn-combine-reprint:hover:not(:disabled),
+.tables-header-buttons #btn-add-tip:hover,
+.tables-header-buttons #btn-tip-history-toggle:hover {
+    background-color: rgba(230, 57, 70, 0.15);
+    color: #e63946;
+    transform: none;
+}
+.tables-header-buttons #btn-combine-mode:active,
+.tables-header-buttons #btn-combine-reprint:active:not(:disabled),
+.tables-header-buttons #btn-add-tip:active,
+.tables-header-buttons #btn-tip-history-toggle:active {
+    background-color: rgba(230, 57, 70, 0.25);
+    color: #e63946;
+}
+
+/* modo combinar activo: celda rellena de rojo */
+.tables-header-buttons #btn-combine-mode.active                { background-color: #e63946; color: #ffffff; }
+.tables-header-buttons #btn-combine-mode.active:hover,
+.tables-header-buttons #btn-combine-mode.active:active         { background-color: #c1121f; color: #ffffff; }
+
+/* reimprimiendo */
+.tables-header-buttons #btn-combine-reprint.busy { background-color: rgba(230, 57, 70, 0.15); }
+
+/* ----- PC / tablet: barra de 4 celdas y "Agregar pedido" con el MISMO ancho y alto ----- */
+@media (min-width: 481px) {
+    .tables-header { flex-wrap: wrap; row-gap: 12px; }
+
+    /* 4 celdas | separador | Agregar pedido  →  las dos mitades miden lo mismo */
+    .tables-header-buttons {
+        flex: 1 1 100%;
+        grid-template-columns: repeat(4, 1fr) 16px 4fr;
+    }
+    .tables-header-buttons #btn-combine-mode,
+    .tables-header-buttons #btn-combine-reprint,
+    .tables-header-buttons #btn-add-tip,
+    .tables-header-buttons #btn-tip-history-toggle {
+        height: 58px;
+        gap: 4px;
+    }
+    /* iconos y etiquetas más pequeños en PC */
+    .tables-header-buttons #btn-combine-mode .fusion-icon,
+    .tables-header-buttons #btn-combine-reprint .reprint-icon,
+    .tables-header-buttons #btn-tip-history-toggle .tip-history-icon {
+        width: 21px;
+        height: 21px;
+    }
+    .tables-header-buttons #btn-add-tip .tip-emoji { font-size: 20px; }
+    .tables-header-buttons #btn-combine-mode::after,
+    .tables-header-buttons #btn-combine-reprint::after,
+    .tables-header-buttons #btn-add-tip::after,
+    .tables-header-buttons #btn-tip-history-toggle::after { font-size: 10px; }
+    .tables-header-buttons #btn-combine-mode            { border-radius: 12px 0 0 12px; }
+    .tables-header-buttons #btn-tip-history-toggle      { border-radius: 0 12px 12px 0; }
+    .tables-header-buttons #btn-add-table {
+        grid-column: 6;
+        height: 58px;
+        margin: 0;
+        padding: 0 16px;
+        font-size: 15px;
+        font-weight: 700;
+        border-radius: 12px;
+        white-space: nowrap;
+    }
+}
+
+/* PC ancho: todo en una fila junto al título; cada mitad mide 248 px de ancho */
+@media (min-width: 900px) {
+    .tables-header { flex-wrap: nowrap; }
+    .tables-header-buttons {
+        flex: 0 0 auto;
+        grid-template-columns: repeat(4, 62px) 16px 248px;
+    }
+}
+
+/* ----- Celular: 4 celdas iguales y "Agregar pedido" debajo a todo el ancho ----- */
+@media (max-width: 480px) {
+    .tables-header-buttons #btn-add-table {
+        grid-column: 1 / -1;
+        margin: 0;
+    }
+}
+
+/* En pantallas táctiles el "hover" se queda pegado después de tocar: lo anulamos */
+@media (hover: none) {
+    .tables-header-buttons #btn-combine-mode:hover:not(.active):not(:active),
+    .tables-header-buttons #btn-combine-reprint:hover:not(:disabled):not(:active):not(.busy),
+    .tables-header-buttons #btn-add-tip:hover:not(:active),
+    .tables-header-buttons #btn-tip-history-toggle:hover:not(:active) {
+        background-color: transparent;
+    }
+    .tables-header-buttons #btn-combine-reprint:hover:not(:disabled):not(.busy) .reprint-icon { animation: none; }
+}

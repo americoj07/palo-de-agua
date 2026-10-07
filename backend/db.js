@@ -57,7 +57,7 @@ async function guardarVenta(tablaCerrada) {
                 tablaCerrada.closeId,
                 tablaCerrada.type        || "mesa",
                 tablaCerrada.tableNumber || tablaCerrada.id,
-                tablaCerrada.label       || "",
+                tablaCerrada.clientName  || tablaCerrada.label || "",
                 tablaCerrada.subtotal    || 0,
                 tablaCerrada.service     || 0,
                 tablaCerrada.total       || 0,

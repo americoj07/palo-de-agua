@@ -5,6 +5,19 @@ import "./statistics.css";
 
 // ❌ ELIMINADO: localStorage — las propinas viven en el servidor
 
+// Escapa texto escrito por el usuario antes de insertarlo con innerHTML
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[c]));
+
+function getClosedTitle(table) {
+    if (table.type === "llevar") {
+        const name = (table.clientName ?? "").trim();
+        return name ? `🥡 ${esc(name.toUpperCase())}` : "🥡 Llevar";
+    }
+    return `Mesa ${table.tableNumber ?? table.id}`;
+}
+
 export function statistics(container) {
     container.innerHTML = `
     <div class="stats-header">
@@ -87,7 +100,7 @@ function renderStats() {
         <div class="closed-table-card">
             <div class="closed-table-header">
                 <span class="closed-table-title">
-                    ${table.type === "llevar" ? "🥡 Llevar" : `Mesa ${table.tableNumber ?? table.id}`}
+                    ${getClosedTitle(table)}
                 </span>
                 <span class="closed-table-time">🕐 ${table.closedAt}</span>
                 <button class="btn-toggle-detail" data-key="${key}">Ver detalle ▼</button>

@@ -172,11 +172,20 @@ function imprimirBuffer(data) {
                         return reject(new Error("No se encontró endpoint bulk OUT en la impresora."));
                     }
 
+                    // Si la impresora no responde (sin papel, tapa abierta, apagada...) el envío
+                    // se quedaba esperando para siempre. Con timeout falla a los 8 s y avisa.
+                    endpoint.timeout = 8000;
+
                     endpoint.transfer(data, (err) => {
                         iface.release(true, () => {
                             try { device.close(); } catch(e) {}
                         });
-                        if (err) return reject(new Error("Error al enviar datos: " + err.message));
+                        if (err) {
+                            const sinRespuesta = /TIMED_OUT/i.test(err.message || "");
+                            return reject(new Error(sinRespuesta
+                                ? "La impresora no responde. Revisa que tenga papel, la tapa cerrada y esté encendida."
+                                : "Error al enviar datos: " + err.message));
+                        }
                         resolve();
                     });
                 });
@@ -207,7 +216,124 @@ function partirTexto(texto, max) {
 }
 
 const COCINA_CATS = ["tickets", "dishes", "other"];
+
+// Texto que se imprime como título del pedido/factura.
+// Para llevar: el nombre del cliente (si no tiene nombre, "Para llevar"). Mesa normal: "Mesa N".
+function etiquetaMesa(table) {
+    if (table.type === "llevar") {
+        const real   = store.tables.find(t => t.id === table.id);
+        const nombre = String(table.clientName || real?.clientName || "").trim();
+        return nombre ? nombre.toUpperCase() : "Para llevar";
+    }
+    return "Mesa " + table.id;
+}
 const BARRA_CATS  = ["drinks"];
+
+// ================================================================
+// ===== HELPERS PEDIDO COMBINADO (varias mesas -> 1 cocina + 1 barra)
+// ================================================================
+const LINEA = "--------------------------------";
+
+// Normaliza un nombre para compararlo: sin tildes, sin espacios dobles, en mayúsculas
+function normalizarNombre(txt) {
+    return String(txt || "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+}
+
+// Suma ítems iguales (mismo producto + término + nota)
+function agruparItems(items) {
+    const mapa = new Map();
+    items.forEach(i => {
+        const key = [i.id, i.category, i.term || "", String(i.note || "").trim().toUpperCase()].join("|");
+        if (mapa.has(key)) mapa.get(key).quantity += i.quantity;
+        else mapa.set(key, { ...i });
+    });
+    return [...mapa.values()];
+}
+
+// "Mesas 5 + 8"  /  "Mesa 5 + JUAN"
+function etiquetaCombinada(tablas) {
+    const mesas  = tablas.filter(t => t.type !== "llevar").map(t => t.id);
+    const llevar = tablas.filter(t => t.type === "llevar").map(t => etiquetaMesa(t));
+    const partes = [];
+    if (mesas.length) partes.push((mesas.length > 1 ? "Mesas " : "Mesa ") + mesas.join(" + "));
+    partes.push(...llevar);
+    return partes.join(" + ");
+}
+
+// Escribe una sección (ENTRADAS, PLATOS, BEBIDAS...) en la impresora
+function agregarSeccion(p, titulo, items) {
+    if (items.length === 0) return;
+    p.text(titulo);
+    items.forEach((item, idx) => {
+        const term = item.term ? " [" + item.term + "]" : "";
+        partirTexto((item.name + term).toUpperCase(), 42).forEach((l, i) => {
+            const prefijo = i === 0 ? "x" + item.quantity + " " : "   ";
+            p.fontSize().text(prefijo + l).fontNormal();
+        });
+        if (item.note) {
+            partirTexto("  (" + String(item.note).toUpperCase() + ")", 44)
+                .forEach(l => p.fontSize().text(l).fontNormal());
+        }
+        if (idx < items.length - 1) p.feed(1);
+    });
+    p.text(LINEA);
+}
+
+function ticketCombinado(titulo, label, secciones, subtitulo = "") {
+    const p = new PosPrinter();
+    p.lineSpacingWide()
+     .center().bold().text(titulo).boldOff()
+     .text(new Date().toLocaleString("es-CO"));
+    if (subtitulo) p.text(subtitulo);
+    p.text(LINEA)
+     .left().bold().text(label).boldOff()
+     .text(LINEA);
+    secciones.forEach(([nombre, items]) => agregarSeccion(p, nombre, items));
+    p.text(LINEA)
+     .center().bold().fontSize().text(label).fontNormal().boldOff()
+     .feed(3).cut();
+    return p.build();
+}
+
+// Imprime (o simula) un pedido combinado: 1 ticket de cocina + 1 de barra.
+// Lo usan tanto el pedido nuevo como la reimpresión del último.
+async function despacharCombinado({ label, secciones, bebidas, fecha }, reimpresion = false) {
+    const hayComida = secciones.some(([, items]) => items.length > 0);
+    const suf       = reimpresion ? " (REIMPRESION)" : "";
+    const sub       = reimpresion && fecha ? "Original: " + fecha : "";
+
+    if (MODO_SIMULACION) {
+        const fmt = i => "  x" + i.quantity + " " + i.name + (i.term ? " [" + i.term + "]" : "");
+        if (hayComida) {
+            const l = ["COCINA" + suf, new Date().toLocaleString("es-CO")];
+            if (sub) l.push(sub);
+            l.push(LINEA, label, LINEA);
+            secciones.forEach(([n, items]) => {
+                if (!items.length) return;
+                l.push(n);
+                items.forEach(i => l.push(fmt(i)));
+                l.push(LINEA);
+            });
+            simularImpresion(l);
+        }
+        if (bebidas.length) {
+            const l = ["BARRA" + suf, new Date().toLocaleString("es-CO")];
+            if (sub) l.push(sub);
+            l.push(LINEA, label, LINEA, "BEBIDAS:");
+            bebidas.forEach(i => l.push(fmt(i)));
+            l.push(LINEA);
+            simularImpresion(l);
+        }
+        return;
+    }
+
+    if (hayComida)       await imprimirBuffer(ticketCombinado("COCINA" + suf, label, secciones, sub));
+    if (bebidas.length)  await imprimirBuffer(ticketCombinado("BARRA"  + suf, label, [["BEBIDAS:", bebidas]], sub));
+}
 
 // ================================================================
 // ===== RUTAS API — Estadísticas MySQL ============================
@@ -332,7 +458,7 @@ io.on("connection", (socket) => {
     socket.on("save-notes", ({ tableId, notes }) => {
         const table = store.tables.find(t => t.id === tableId && t.status === "open");
         if (!table) return;
-        table.notes = notes;
+        table.notes = String(notes ?? "").toUpperCase();
         clearTimeout(notesTimers[tableId]);
         notesTimers[tableId] = setTimeout(() => {
             saveStore();
@@ -349,7 +475,7 @@ io.on("connection", (socket) => {
             (o.term || "") === (term || "") && o.printed === printed
         );
         if (!item) return;
-        item.note = note || null;
+        item.note = note ? String(note).toUpperCase() : null;
         saveStore();
         io.emit("store-update", store);
     });
@@ -357,7 +483,7 @@ io.on("connection", (socket) => {
     // ===== IMPRIMIR TICKET (FACTURA) =====
     socket.on("print-ticket", async ({ table, subtotal, service, total, includeService }) => {
         const linea = "--------------------------------";
-        const label = table.type === "llevar" ? "Para llevar" : "Mesa " + table.id;
+        const label = etiquetaMesa(table);
 
         if (MODO_SIMULACION) {
             const lineas = ["   PALO DE AGUA RESTAURANTE", table.createdAt, linea, label, linea];
@@ -493,15 +619,87 @@ io.on("connection", (socket) => {
         }
     });
 
+    // ===== IMPRIMIR PEDIDO COMBINADO (varias mesas -> 1 cocina + 1 barra) =====
+    socket.on("print-combined-order", async ({ tableIds }) => {
+        const tablas = (tableIds || [])
+            .map(id => store.tables.find(t => t.id === id && t.status === "open"))
+            .filter(Boolean);
+
+        if (tablas.length === 0) {
+            socket.emit("print-error", "No se encontraron las mesas seleccionadas.");
+            return;
+        }
+
+        const pendientes = tablas.flatMap(t => t.order.filter(i => !i.printed));
+        const comida  = agruparItems(pendientes.filter(i => COCINA_CATS.includes(i.category)));
+        const bebidas = agruparItems(pendientes.filter(i => BARRA_CATS.includes(i.category)));
+
+        if (comida.length === 0 && bebidas.length === 0) {
+            socket.emit("print-error", "No hay items nuevos para imprimir en las mesas seleccionadas.");
+            return;
+        }
+
+        const label = etiquetaCombinada(tablas);
+        const secciones = [
+            ["ENTRADAS:",  comida.filter(i => i.category === "tickets")],
+            ["PLATOS:",    comida.filter(i => i.category === "dishes")],
+            ["ADICIONES:", comida.filter(i => i.category === "other")],
+        ];
+
+        try {
+            await despacharCombinado({ label, secciones, bebidas }, false);
+
+            // Marcar como impreso en cada mesa real
+            tablas.forEach(t => t.order.forEach(item => {
+                if (COCINA_CATS.includes(item.category) || BARRA_CATS.includes(item.category)) {
+                    item.printed = true;
+                }
+            }));
+
+            // Guardar copia del último pedido combinado (sobrevive a reinicios) para poder reimprimirlo
+            const soloCampos = i => ({ name: i.name, quantity: i.quantity, term: i.term || "", note: i.note || "", category: i.category });
+            store.lastCombined = {
+                fecha:     new Date().toLocaleString("es-CO"),
+                label,
+                secciones: secciones.map(([n, items]) => [n, items.map(soloCampos)]),
+                bebidas:   bebidas.map(soloCampos),
+            };
+
+            saveStore();
+            io.emit("store-update", store);
+            socket.emit("print-success");
+        } catch (e) {
+            console.error("Error impresora (pedido combinado):", e.message);
+            socket.emit("print-error", e.message);
+        }
+    });
+
+    // ===== REIMPRIMIR ÚLTIMO PEDIDO COMBINADO (papel agotado / impresora falló) =====
+    socket.on("reprint-combined-order", async () => {
+        console.log("🖨️  Reimpresión del último pedido combinado solicitada");
+        const ultimo = store.lastCombined;
+        if (!ultimo) {
+            socket.emit("print-error", "No hay un pedido combinado anterior para reimprimir.");
+            return;
+        }
+        try {
+            await despacharCombinado(ultimo, true);
+            socket.emit("print-success");
+        } catch (e) {
+            console.error("Error impresora (reimpresion combinado):", e.message);
+            socket.emit("print-error", e.message);
+        }
+    });
+
     // ===== IMPRIMIR PEDIDO =====
     socket.on("print-order", async ({ table, notes }) => {
         const linea      = "--------------------------------";
-        const label      = table.type === "llevar" ? "Para llevar" : "Mesa " + table.id;
+        const label      = etiquetaMesa(table);
 
         const tableReal  = store.tables.find(t => t.id === table.id && t.status === "open");
         const foodItems  = (tableReal || table).order.filter(i => COCINA_CATS.includes(i.category) && !i.printed);
         const drinkItems = (tableReal || table).order.filter(i => BARRA_CATS.includes(i.category) && !i.printed);
-        const notaTexto  = notes && notes.trim() ? notes.trim() : null;
+        const notaTexto  = notes && notes.trim() ? notes.trim().toUpperCase() : null;
 
         if (foodItems.length === 0 && drinkItems.length === 0) {
             socket.emit("print-error", "No hay items nuevos para imprimir. Todo ya fue enviado.");
@@ -518,7 +716,7 @@ io.on("connection", (socket) => {
                     lineas.push("ENTRADAS:");
                     tickets.forEach(item => {
                         lineas.push("  x" + item.quantity + " " + item.name);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -527,7 +725,7 @@ io.on("connection", (socket) => {
                     dishes.forEach(item => {
                         const term = item.term ? " [" + item.term + "]" : "";
                         lineas.push("  x" + item.quantity + " " + item.name + term);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -535,7 +733,7 @@ io.on("connection", (socket) => {
                     lineas.push("ADICIONES:");
                     others.forEach(item => {
                         lineas.push("  x" + item.quantity + " " + item.name);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -552,7 +750,7 @@ io.on("connection", (socket) => {
                 drinkItems.forEach(item => {
                     const term = item.term ? " [" + item.term + "]" : "";
                     lineas.push("  x" + item.quantity + " " + item.name + term);
-                    if (item.note) lineas.push("    (" + item.note + ")");
+                    if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                 });
                 lineas.push(linea);
                 if (notaTexto) {
@@ -599,7 +797,7 @@ io.on("connection", (socket) => {
                             const prefijo = i === 0 ? "x" + item.quantity + " " : "   ";
                             p.fontSize().text(prefijo + l).fontNormal();
                         });
-                        if (item.note) { partirTexto("  (" + item.note + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
+                        if (item.note) { partirTexto("  (" + String(item.note).toUpperCase() + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
                         if (idx < tickets.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -613,7 +811,7 @@ io.on("connection", (socket) => {
                             const prefijo = i === 0 ? "x" + item.quantity + " " : "   ";
                             p.fontSize().text(prefijo + l).fontNormal();
                         });
-                        if (item.note) { partirTexto("  (" + item.note + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
+                        if (item.note) { partirTexto("  (" + String(item.note).toUpperCase() + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
                         if (idx < dishes.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -626,7 +824,7 @@ io.on("connection", (socket) => {
                             const prefijo = i === 0 ? "x" + item.quantity + " " : "   ";
                             p.fontSize().text(prefijo + l).fontNormal();
                         });
-                        if (item.note) { partirTexto("  (" + item.note + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
+                        if (item.note) { partirTexto("  (" + String(item.note).toUpperCase() + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
                         if (idx < others.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -664,7 +862,7 @@ io.on("connection", (socket) => {
                         const prefijo = i === 0 ? "x" + item.quantity + " " : "   ";
                         p.fontSize().text(prefijo + l).fontNormal();
                     });
-                    if (item.note) { partirTexto("  (" + item.note + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
+                    if (item.note) { partirTexto("  (" + String(item.note).toUpperCase() + ")", 44).forEach(l => p.fontSize().text(l).fontNormal()); }
                     if (idx < drinkItems.length - 1) p.feed(1);
                 });
                 p.text(linea);
@@ -722,7 +920,7 @@ io.on("connection", (socket) => {
     // ===== REIMPRIMIR PEDIDO (items ya impresos) =====
     socket.on("reprint-order", async ({ table }) => {
         const linea      = "--------------------------------";
-        const label      = table.type === "llevar" ? "Para llevar" : "Mesa " + table.id;
+        const label      = etiquetaMesa(table);
         const tableReal  = store.tables.find(t => t.id === table.id && t.status === "open");
         const order      = (tableReal || table).order;
 
@@ -744,7 +942,7 @@ io.on("connection", (socket) => {
                     lineas.push("ENTRADAS:");
                     tickets.forEach(item => {
                         lineas.push("  x" + item.quantity + " " + item.name);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -753,7 +951,7 @@ io.on("connection", (socket) => {
                     dishes.forEach(item => {
                         const term = item.term ? " [" + item.term + "]" : "";
                         lineas.push("  x" + item.quantity + " " + item.name + term);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -761,7 +959,7 @@ io.on("connection", (socket) => {
                     lineas.push("ADICIONES:");
                     others.forEach(item => {
                         lineas.push("  x" + item.quantity + " " + item.name);
-                        if (item.note) lineas.push("    (" + item.note + ")");
+                        if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                     });
                     lineas.push(linea);
                 }
@@ -773,7 +971,7 @@ io.on("connection", (socket) => {
                 drinkItems.forEach(item => {
                     const term = item.term ? " [" + item.term + "]" : "";
                     lineas.push("  x" + item.quantity + " " + item.name + term);
-                    if (item.note) lineas.push("    (" + item.note + ")");
+                    if (item.note) lineas.push("    (" + String(item.note).toUpperCase() + ")");
                 });
                 lineas.push(linea);
                 lineas.push("   *** REIMPRESION BARRA ***");
@@ -802,7 +1000,7 @@ io.on("connection", (socket) => {
                     tickets.forEach((item, idx) => {
                         const ls = partirTexto(item.name.toUpperCase(), 42);
                         ls.forEach((l, i) => { p.fontSize().text((i === 0 ? "x" + item.quantity + " " : "   ") + l).fontNormal(); });
-                        if (item.note) p.text("  (" + item.note + ")");
+                        if (item.note) p.text("  (" + String(item.note).toUpperCase() + ")");
                         if (idx < tickets.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -813,7 +1011,7 @@ io.on("connection", (socket) => {
                         const term = item.term ? " [" + item.term + "]" : "";
                         const ls = partirTexto((item.name + term).toUpperCase(), 42);
                         ls.forEach((l, i) => { p.fontSize().text((i === 0 ? "x" + item.quantity + " " : "   ") + l).fontNormal(); });
-                        if (item.note) p.text("  (" + item.note + ")");
+                        if (item.note) p.text("  (" + String(item.note).toUpperCase() + ")");
                         if (idx < dishes.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -823,7 +1021,7 @@ io.on("connection", (socket) => {
                     others.forEach((item, idx) => {
                         const ls = partirTexto(item.name.toUpperCase(), 42);
                         ls.forEach((l, i) => { p.fontSize().text((i === 0 ? "x" + item.quantity + " " : "   ") + l).fontNormal(); });
-                        if (item.note) p.text("  (" + item.note + ")");
+                        if (item.note) p.text("  (" + String(item.note).toUpperCase() + ")");
                         if (idx < others.length - 1) p.feed(1);
                     });
                     p.text(linea);
@@ -846,7 +1044,7 @@ io.on("connection", (socket) => {
                     const term = item.term ? " [" + item.term + "]" : "";
                     const ls = partirTexto((item.name + term).toUpperCase(), 42);
                     ls.forEach((l, i) => { p.fontSize().text((i === 0 ? "x" + item.quantity + " " : "   ") + l).fontNormal(); });
-                    if (item.note) p.text("  (" + item.note + ")");
+                    if (item.note) p.text("  (" + String(item.note).toUpperCase() + ")");
                     if (idx < drinkItems.length - 1) p.feed(1);
                 });
                 p.text(linea).center().bold().fontSize().text(label).fontNormal().boldOff().feed(3).cut();
@@ -863,9 +1061,24 @@ io.on("connection", (socket) => {
 
     // ===== CREAR MESA =====
     socket.on("add-table", (newTable) => {
+        // Pedidos para llevar con nombre: no se permiten nombres repetidos entre pedidos abiertos.
+        // Sin nombre ("Para llevar" por defecto) sí se puede repetir.
+        if (newTable.type === "llevar") {
+            const nombre = normalizarNombre(newTable.clientName);
+            if (nombre) {
+                const repetido = store.tables.some(t =>
+                    t.status === "open" && t.type === "llevar" && normalizarNombre(t.clientName) === nombre
+                );
+                if (repetido) {
+                    socket.emit("name-error", `Ya hay un pedido abierto con el nombre "${nombre}"`);
+                    return;
+                }
+            }
+        }
         const alreadyOpen = store.tables.find(t => t.id === newTable.id && t.status === "open");
         if (alreadyOpen) { socket.emit("error", "La mesa " + newTable.id + " ya esta abierta"); return; }
         store.tables = store.tables.filter(t => t.id !== newTable.id);
+        if (newTable.clientName) newTable.clientName = String(newTable.clientName).trim().toUpperCase();
         store.tables.push(newTable);
         saveStore();
         io.emit("store-update", store);
@@ -930,6 +1143,7 @@ io.on("connection", (socket) => {
             closeId:     `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             tableNumber: table.id,
             id: table.id, type: table.type, label: table.label,
+            clientName: table.clientName || "",
             createdAt: table.createdAt, closedAt: new Date().toLocaleString("es-CO"),
             order: [...table.order], subtotal, service, total
         });
@@ -1018,6 +1232,7 @@ io.on("connection", (socket) => {
             id:          cerrada.id,
             type:        cerrada.type,
             label:       cerrada.label,
+            clientName:  cerrada.clientName || "",
             status:      "open",
             order:       cerrada.order || [],
             createdAt:   cerrada.createdAt,

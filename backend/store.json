@@ -1,84 +1,29 @@
 {
-  "tables": [],
-  "closedTables": [
+  "tables": [
     {
-      "closeId": "1785269963005-vnmvq",
-      "tableNumber": 5,
-      "id": 5,
-      "type": "mesa",
-      "label": "Mesa 5",
-      "createdAt": "28/7/2026, 9:52:42 a. m.",
-      "closedAt": "28/7/2026, 3:19:23 p. m.",
+      "id": 1791303696432,
+      "type": "llevar",
+      "label": "Llevar",
+      "clientName": "M5.JUAN",
+      "status": "open",
       "order": [
         {
-          "id": 127,
-          "category": "tickets",
-          "name": "Patacones con hogao",
-          "price": 15000,
-          "quantity": 1,
-          "subtotal": 15000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 128,
-          "category": "tickets",
-          "name": "Nachos con guacamole",
-          "price": 11000,
-          "quantity": 1,
-          "subtotal": 11000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 1,
+          "id": 24,
           "category": "dishes",
-          "name": "Alambre",
-          "price": 56000,
+          "name": "Punta de anca",
+          "price": 47500,
           "quantity": 1,
-          "subtotal": 56000,
-          "term": null,
+          "subtotal": 47500,
+          "term": "1/2",
           "note": null,
           "servedKitchen": false,
           "servedBar": false,
           "printed": false
         },
         {
-          "id": 2,
-          "category": "dishes",
-          "name": "Viva mexico",
-          "price": 48000,
-          "quantity": 1,
-          "subtotal": 48000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 3,
-          "category": "dishes",
-          "name": "Fundido res y chicharron",
-          "price": 44500,
-          "quantity": 1,
-          "subtotal": 44500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 57,
+          "id": 54,
           "category": "drinks",
-          "name": "Sprite",
+          "name": "Coca-cola",
           "price": 5000,
           "quantity": 1,
           "subtotal": 5000,
@@ -89,196 +34,50 @@
           "printed": false
         },
         {
-          "id": 58,
-          "category": "drinks",
-          "name": "Corona",
-          "price": 10000,
+          "id": 25,
+          "category": "dishes",
+          "name": "Churrasco argentino",
+          "price": 47500,
           "quantity": 1,
-          "subtotal": 10000,
-          "term": null,
+          "subtotal": 47500,
+          "term": "100%",
           "note": null,
           "servedKitchen": false,
           "servedBar": false,
           "printed": false
         },
         {
-          "id": 59,
+          "id": 74,
           "category": "drinks",
-          "name": "Stella",
-          "price": 10000,
-          "quantity": 1,
-          "subtotal": 10000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 60,
-          "category": "drinks",
-          "name": "Club Colombia",
+          "name": "Mango",
           "price": 8500,
           "quantity": 1,
           "subtotal": 8500,
           "term": null,
-          "note": null,
+          "note": "EN VASO DESECHABLE",
           "servedKitchen": false,
           "servedBar": false,
           "printed": false
         }
       ],
-      "subtotal": 208000,
-      "service": 20800,
-      "total": 228800
+      "createdAt": "6/10/2026, 11:21:36 a. m.",
+      "kitchenDone": false,
+      "barDone": false
     },
     {
-      "closeId": "1785269988670-xqhwr",
-      "tableNumber": 4,
-      "id": 4,
-      "type": "mesa",
-      "label": "Mesa 4",
-      "createdAt": "28/7/2026, 3:19:35 p. m.",
-      "closedAt": "28/7/2026, 3:19:48 p. m.",
-      "order": [
-        {
-          "id": 1,
-          "category": "dishes",
-          "name": "Alambre",
-          "price": 56000,
-          "quantity": 1,
-          "subtotal": 56000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 2,
-          "category": "dishes",
-          "name": "Viva mexico",
-          "price": 48000,
-          "quantity": 1,
-          "subtotal": 48000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 34,
-          "category": "dishes",
-          "name": "Filete de pechuga a la parrila",
-          "price": 42500,
-          "quantity": 1,
-          "subtotal": 42500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 33,
-          "category": "dishes",
-          "name": "Costillas aguidulce",
-          "price": 46500,
-          "quantity": 1,
-          "subtotal": 46500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 62,
-          "category": "drinks",
-          "name": "Corona michelada",
-          "price": 13000,
-          "quantity": 1,
-          "subtotal": 13000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 61,
-          "category": "drinks",
-          "name": "Aguila light",
-          "price": 8500,
-          "quantity": 1,
-          "subtotal": 8500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 129,
-          "category": "other",
-          "name": "Ad. tortilla de maiz x3",
-          "price": 4500,
-          "quantity": 1,
-          "subtotal": 4500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 130,
-          "category": "other",
-          "name": "Ad. Sour cream",
-          "price": 2500,
-          "quantity": 1,
-          "subtotal": 2500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        }
-      ],
-      "subtotal": 221500,
-      "service": 22150,
-      "total": 243650
-    },
-    {
-      "closeId": "1785270044753-v96bv",
-      "tableNumber": 1785270034704,
-      "id": 1785270034704,
+      "id": 1791303759692,
       "type": "llevar",
       "label": "Llevar",
-      "createdAt": "28/7/2026, 3:20:34 p. m.",
-      "closedAt": "28/7/2026, 3:20:44 p. m.",
+      "clientName": "5M VALENTINA",
+      "status": "open",
       "order": [
         {
-          "id": 1,
-          "category": "dishes",
-          "name": "Alambre",
-          "price": 56000,
+          "id": 127,
+          "category": "tickets",
+          "name": "Patacones con hogao",
+          "price": 15000,
           "quantity": 1,
-          "subtotal": 56000,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 2,
-          "category": "dishes",
-          "name": "Viva mexico",
-          "price": 48000,
-          "quantity": 1,
-          "subtotal": 48000,
+          "subtotal": 15000,
           "term": null,
           "note": null,
           "servedKitchen": false,
@@ -299,14 +98,207 @@
           "printed": false
         },
         {
-          "id": 51,
+          "id": 53,
           "category": "dishes",
-          "name": "Burrito palo de agua",
-          "price": 32500,
+          "name": "Flauta",
+          "price": 29500,
           "quantity": 1,
-          "subtotal": 32500,
+          "subtotal": 29500,
           "term": null,
           "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 25,
+          "category": "dishes",
+          "name": "Churrasco argentino",
+          "price": 47500,
+          "quantity": 1,
+          "subtotal": 47500,
+          "term": "1/2",
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 72,
+          "category": "drinks",
+          "name": "Fresa",
+          "price": 8500,
+          "quantity": 1,
+          "subtotal": 8500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 74,
+          "category": "drinks",
+          "name": "Mango",
+          "price": 8500,
+          "quantity": 1,
+          "subtotal": 8500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 93,
+          "category": "drinks",
+          "name": "Mango, pina, maracuya",
+          "price": 13500,
+          "quantity": 1,
+          "subtotal": 13500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "createdAt": "6/10/2026, 11:22:39 a. m.",
+      "kitchenDone": false,
+      "barDone": false
+    },
+    {
+      "id": 1791303826627,
+      "type": "llevar",
+      "label": "Llevar",
+      "clientName": "M5 JULIAN",
+      "status": "open",
+      "order": [
+        {
+          "id": 19,
+          "category": "dishes",
+          "name": "Fajita res",
+          "price": 38500,
+          "quantity": 1,
+          "subtotal": 38500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 18,
+          "category": "dishes",
+          "name": "Fajita mix",
+          "price": 36500,
+          "quantity": 1,
+          "subtotal": 36500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 50,
+          "category": "dishes",
+          "name": "Burrito",
+          "price": 29500,
+          "quantity": 1,
+          "subtotal": 29500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 73,
+          "category": "drinks",
+          "name": "Mora",
+          "price": 8500,
+          "quantity": 1,
+          "subtotal": 8500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 75,
+          "category": "drinks",
+          "name": "Maracuya",
+          "price": 8500,
+          "quantity": 2,
+          "subtotal": 17000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "createdAt": "6/10/2026, 11:23:46 a. m.",
+      "kitchenDone": false,
+      "barDone": false
+    },
+    {
+      "id": 1791303879869,
+      "type": "llevar",
+      "label": "Llevar",
+      "clientName": "M8 JUAN",
+      "status": "open",
+      "order": [
+        {
+          "id": 127,
+          "category": "tickets",
+          "name": "Patacones con hogao",
+          "price": 15000,
+          "quantity": 1,
+          "subtotal": 15000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 25,
+          "category": "dishes",
+          "name": "Churrasco argentino",
+          "price": 47500,
+          "quantity": 1,
+          "subtotal": 47500,
+          "term": "1/2",
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 27,
+          "category": "dishes",
+          "name": "Solomito",
+          "price": 49500,
+          "quantity": 1,
+          "subtotal": 49500,
+          "term": "100%",
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 26,
+          "category": "dishes",
+          "name": "Bife de chorrizo",
+          "price": 56000,
+          "quantity": 1,
+          "subtotal": 56000,
+          "term": "1/2",
+          "note": "CERRADO",
           "servedKitchen": false,
           "servedBar": false,
           "printed": false
@@ -319,31 +311,18 @@
           "quantity": 1,
           "subtotal": 11000,
           "term": null,
-          "note": null,
+          "note": "SOLO SAL",
           "servedKitchen": false,
           "servedBar": false,
           "printed": false
         },
         {
-          "id": 66,
+          "id": 54,
           "category": "drinks",
-          "name": "Copa tinto",
-          "price": 19500,
-          "quantity": 1,
-          "subtotal": 19500,
-          "term": null,
-          "note": null,
-          "servedKitchen": false,
-          "servedBar": false,
-          "printed": false
-        },
-        {
-          "id": 67,
-          "category": "drinks",
-          "name": "Copa rosado",
-          "price": 19500,
-          "quantity": 1,
-          "subtotal": 19500,
+          "name": "Coca-cola",
+          "price": 5000,
+          "quantity": 2,
+          "subtotal": 10000,
           "term": null,
           "note": null,
           "servedKitchen": false,
@@ -351,11 +330,209 @@
           "printed": false
         }
       ],
-      "subtotal": 216000,
-      "service": 0,
-      "total": 216000
+      "createdAt": "6/10/2026, 11:24:39 a. m.",
+      "kitchenDone": false,
+      "barDone": false
+    },
+    {
+      "id": 1791303971962,
+      "type": "llevar",
+      "label": "Llevar",
+      "clientName": "8M MATIAS",
+      "status": "open",
+      "order": [
+        {
+          "id": 29,
+          "category": "dishes",
+          "name": "Parrila palo de agua",
+          "price": 48000,
+          "quantity": 1,
+          "subtotal": 48000,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 32,
+          "category": "dishes",
+          "name": "Costillas bufalo",
+          "price": 46500,
+          "quantity": 1,
+          "subtotal": 46500,
+          "term": null,
+          "note": "SALSA APARTE",
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 34,
+          "category": "dishes",
+          "name": "Filete de pechuga a la parrila",
+          "price": 42500,
+          "quantity": 1,
+          "subtotal": 42500,
+          "term": null,
+          "note": "CON AREPA ASADA",
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 76,
+          "category": "drinks",
+          "name": "Mandarina",
+          "price": 9500,
+          "quantity": 1,
+          "subtotal": 9500,
+          "term": null,
+          "note": null,
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        },
+        {
+          "id": 75,
+          "category": "drinks",
+          "name": "Maracuya",
+          "price": 8500,
+          "quantity": 2,
+          "subtotal": 17000,
+          "term": null,
+          "note": "UNA SIN AZUCAR",
+          "servedKitchen": false,
+          "servedBar": false,
+          "printed": false
+        }
+      ],
+      "createdAt": "6/10/2026, 11:26:11 a. m.",
+      "kitchenDone": false,
+      "barDone": false
     }
   ],
+  "closedTables": [],
   "totalTips": 0,
-  "tipsHistory": []
+  "tipsHistory": [],
+  "lastCombined": {
+    "fecha": "6/10/2026, 12:12:04 a. m.",
+    "label": "JULIAN + JUAN",
+    "secciones": [
+      [
+        "ENTRADAS:",
+        [
+          {
+            "name": "Patacones con hogao",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "tickets"
+          },
+          {
+            "name": "Nachos con guacamole",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "tickets"
+          }
+        ]
+      ],
+      [
+        "PLATOS:",
+        [
+          {
+            "name": "Punta de anca",
+            "quantity": 1,
+            "term": "Azul",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Canasta",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Costillas bufalo",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Costillas aguidulce",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Alambre",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Viva mexico",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          },
+          {
+            "name": "Fundido res y chicharron",
+            "quantity": 1,
+            "term": "",
+            "note": "",
+            "category": "dishes"
+          }
+        ]
+      ],
+      [
+        "ADICIONES:",
+        []
+      ]
+    ],
+    "bebidas": [
+      {
+        "name": "Coca-cola",
+        "quantity": 3,
+        "term": "",
+        "note": "",
+        "category": "drinks"
+      },
+      {
+        "name": "Corona michelada",
+        "quantity": 1,
+        "term": "",
+        "note": "",
+        "category": "drinks"
+      },
+      {
+        "name": "Aguila light",
+        "quantity": 1,
+        "term": "",
+        "note": "",
+        "category": "drinks"
+      },
+      {
+        "name": "Club Colombia",
+        "quantity": 1,
+        "term": "",
+        "note": "",
+        "category": "drinks"
+      },
+      {
+        "name": "Aguila light michelada",
+        "quantity": 1,
+        "term": "",
+        "note": "",
+        "category": "drinks"
+      }
+    ]
+  }
 }

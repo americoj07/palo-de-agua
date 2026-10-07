@@ -18,7 +18,7 @@ export function openTableDetail(tableId) {
     <div class="modal">
         <div class="modal-header">
             <div>
-                <h2>${table.type === "llevar" ? "🥡 Para llevar" : `Mesa ${table.id}`}</h2>
+                <h2>${table.type === "llevar" ? (table.clientName ? `🥡 ${String(table.clientName).toUpperCase()}` : "🥡 Para llevar") : `Mesa ${table.id}`}</h2>
                 <span class="table-time">🕐 ${table.createdAt}</span>
             </div>
             <button class="btn-close">✕</button>
@@ -55,7 +55,7 @@ export function openTableDetail(tableId) {
                     </div>
                     <div class="custom-item-body">
                         <label class="custom-item-label">Nombre del ítem</label>
-                        <input type="text" id="custom-item-name" class="custom-item-input"
+                        <input type="text" id="custom-item-name" class="custom-item-input" style="text-transform:uppercase"
                             placeholder="Ej: Copa de vino, Bandeja especial..." autocomplete="off"/>
                         <label class="custom-item-label">Precio</label>
                         <input type="number" id="custom-item-price" class="custom-item-input"
@@ -139,7 +139,7 @@ export function openTableDetail(tableId) {
                 <span id="item-note-title">📝 Nota del item</span>
                 <button class="notes-modal-close" id="btn-close-item-note">✕</button>
             </div>
-            <textarea id="item-note-textarea" class="notes-textarea"
+            <textarea id="item-note-textarea" class="notes-textarea" style="text-transform:uppercase"
                 placeholder="Ej: sin cebolla, sin guacamole..."
                 rows="4"></textarea>
             <div class="notes-modal-footer">
@@ -232,7 +232,7 @@ export function openTableDetail(tableId) {
             category,
             term:     term || null,
             printed:  printed === "true",
-            note:     itemNoteTextarea.value.trim()
+            note:     itemNoteTextarea.value.trim().toUpperCase()
         });
         closeItemNote();
     });
@@ -291,7 +291,7 @@ export function openTableDetail(tableId) {
     modal.querySelector("#btn-save-custom-item").addEventListener("click", () => {
         const nameInput  = modal.querySelector("#custom-item-name");
         const priceInput = modal.querySelector("#custom-item-price");
-        const name  = nameInput.value.trim();
+        const name  = nameInput.value.trim().toUpperCase();
         const price = parseInt(priceInput.value);
 
         if (!name) { alert("Por favor escribe un nombre para el ítem"); nameInput.focus(); return; }
@@ -606,7 +606,7 @@ function buildOrderItemHTML(item) {
             ${item.name}
             ${item.term ? `<span class="order-item-term">${item.term}</span>` : ""}
             ${locked ? `<span class="order-item-sent">✓</span>` : ""}
-            ${item.note ? `<span class="order-item-note-text">(${item.note})</span>` : ""}
+            ${item.note ? `<span class="order-item-note-text">(${String(item.note).toUpperCase()})</span>` : ""}
         </span>
         <div class="order-item-controls">
             <button class="btn-qty ${locked ? 'btn-qty-minus-printed' : ''}"
@@ -635,7 +635,7 @@ function buildOrderItemHTMLMob(item) {
             ${item.name}
             ${item.term ? `<span class="order-item-term">${item.term}</span>` : ""}
             ${locked ? `<span class="order-item-sent">✓</span>` : ""}
-            ${item.note ? `<span class="order-item-note-text">(${item.note})</span>` : ""}
+            ${item.note ? `<span class="order-item-note-text">(${String(item.note).toUpperCase()})</span>` : ""}
         </span>
         <div class="order-item-controls">
             <button class="btn-qty ${locked ? 'btn-qty-minus-printed' : ''}"
@@ -656,7 +656,7 @@ function openDevueltaModal({ table, subtotal, service, total, includeService, cl
     const existing = document.getElementById("devuelta-modal-overlay");
     if (existing) existing.remove();
 
-    const label = table.type === "llevar" ? "🥡 Para llevar" : `Mesa ${table.id}`;
+    const label = table.type === "llevar" ? (table.clientName ? `🥡 ${String(table.clientName).toUpperCase()}` : "🥡 Para llevar") : `Mesa ${table.id}`;
 
     const overlay = document.createElement("div");
     overlay.id = "devuelta-modal-overlay";

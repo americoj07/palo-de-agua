@@ -5,6 +5,29 @@ import "./drinks.css";
 
 const barStore = new Map();
 
+// Escapa texto escrito por el usuario antes de insertarlo con innerHTML
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[c]));
+
+// Nota del ítem (ej. "(CON AREPA)") + nombre, apilados uno sobre otro
+const noteHtml = (item) => item.note
+    ? `<span class="order-row-note">(${esc(String(item.note).toUpperCase())})</span>`
+    : "";
+const nameHtml = (item) => `
+                        <div class="order-row-info">
+                            <span class="order-row-name">${item.name}</span>
+                            ${noteHtml(item)}
+                        </div>`;
+
+function getTitle(table) {
+    if (table.type === "llevar") {
+        const name = (table.clientName ?? "").trim();
+        return name ? `🥡 ${esc(name.toUpperCase())}` : "🥡 Llevar";
+    }
+    return `Mesa ${table.id}`;
+}
+
 function syncBarStore(newStore) {
     newStore.tables.forEach(table => {
         if (table.status !== "open") return;
@@ -22,6 +45,7 @@ function syncBarStore(newStore) {
             local.notes = table.notes ?? local.notes ?? "";
             local.id    = table.id;
             local.label = table.label;
+            local.clientName = table.clientName;
             barStore.set(table.id, local);
         }
     });
@@ -61,7 +85,7 @@ function renderDrinks() {
 
     body.innerHTML = tablesWithDrinks.map(table => {
         const drinks     = table.order.filter(i => i.category === "drinks" && !i.servedBar);
-        const titleLabel = table.type === "llevar" ? "🥡 Llevar" : `Mesa ${table.id}`;
+        const titleLabel = getTitle(table);
 
         return `
         <div class="table-order-card">
@@ -75,7 +99,7 @@ function renderDrinks() {
                 ${drinks.map(item => `
                     <div class="order-row">
                         <span class="order-row-qty">x${item.quantity}</span>
-                        <span class="order-row-name">${item.name}</span>
+                        ${nameHtml(item)}
                         ${item.term ? `<span class="order-row-term">${item.term}</span>` : ""}
                     </div>
                 `).join("")}
@@ -84,7 +108,7 @@ function renderDrinks() {
             ${table.notes ? `
             <div class="order-section order-notes-section">
                 <h4 class="order-section-title">📝 Notas</h4>
-                <p class="order-notes-text">${table.notes}</p>
+                <p class="order-notes-text">${esc(String(table.notes).toUpperCase())}</p>
             </div>
             ` : ""}
 

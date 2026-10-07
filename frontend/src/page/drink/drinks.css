@@ -102,6 +102,25 @@
     border: 1px solid #3d9be9;
 }
 
+/* ===== NOMBRE + NOTA DEL ITEM (ej. "(CON AREPA)") ===== */
+.order-row-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.order-row-info .order-row-name { flex: none; }
+
+.order-row-note {
+    color: #c9a84c;
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
 /* ===== NOTAS ===== */
 .order-notes-section {
     background: rgba(230,57,70,0.08);
